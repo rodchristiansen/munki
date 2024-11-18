@@ -318,14 +318,19 @@ if [ "$XCODEBUILD_RESULT" -ne 0 ]; then
 fi
 
 MSCAPP="$MUNKIROOT/code/apps/Managed Software Center/build/Release/Managed Software Center.app"
-if [ ! -e "$MSCAPP" ]; then
-    echo "Need a release build of Managed Software Center.app!"
-    echo "Open the Xcode project $MUNKIROOT/code/apps/Managed Software Center/Managed Software Center.xcodeproj and build it."
+SOFTWARECENTERAPP="$MUNKIROOT/code/apps/Managed Software Center/build/Release/Software Center.app"
+
+# Copy and rename Managed Software Center.app to Software Center.app
+cp -R "$MSCAPP" "$SOFTWARECENTERAPP"
+
+if [ ! -e "$SOFTWARECENTERAPP" ]; then
+    echo "Failed to create Software Center.app from Managed Software Center.app!"
     exit 2
-else
-    MSCVERSION=$(defaults read "$MSCAPP/Contents/Info" CFBundleShortVersionString)
-    echo "Managed Software Center.app version: $MSCVERSION"
 fi
+
+echo "Software Center.app successfully created."
+
+MSCAPP="$SOFTWARECENTERAPP"
 
 # Build MunkiStatus
 echo "Building MunkiStatus.xcodeproj..."
@@ -545,20 +550,20 @@ mkdir -m 775 "$APPROOT/Applications"
 # Copy Managed Software Center application.
 cp -R "$MSCAPP" "$APPROOT/Applications/"
 # Create Helper directory
-mkdir -m 775 "$APPROOT/Applications/Managed Software Center.app/Contents/Helpers/"
+mkdir -m 775 "$APPROOT/Applications/Software Center.app/Contents/Helpers/"
 # Copy MunkiStatus helper app
-cp -R "$MSAPP" "$APPROOT/Applications/Managed Software Center.app/Contents/Helpers/"
+cp -R "$MSAPP" "$APPROOT/Applications/Software Center.app/Contents/Helpers/"
 # Copy notifier helper app
-cp -R "$NOTIFIERAPP" "$APPROOT/Applications/Managed Software Center.app/Contents/Helpers/"
+cp -R "$NOTIFIERAPP" "$APPROOT/Applications/Software Center.app/Contents/Helpers/"
 # make sure not writeable by group or other
-chmod -R go-w "$APPROOT/Applications/Managed Software Center.app"
+chmod -R go-w "$APPROOT/Applications/Software Center.app"
 
 # sign MSC app
 if [ "$APPSIGNINGCERT" != "" ]; then
     echo "Signing Managed Software Center.app Bundles..."
     /usr/bin/codesign -f -s "$APPSIGNINGCERT" --options runtime --timestamp --verbose \
-        "$APPROOT/Applications/Managed Software Center.app/Contents/PlugIns/MSCDockTilePlugin.docktileplugin" \
-        "$APPROOT/Applications/Managed Software Center.app/Contents/Helpers/munki-notifier.app"
+        "$APPROOT/Applications/Software Center.app/Contents/PlugIns/MSCDockTilePlugin.docktileplugin" \
+        "$APPROOT/Applications/Software Center.app/Contents/Helpers/munki-notifier.app"
     SIGNING_RESULT="$?"
     if [ "$SIGNING_RESULT" -ne 0 ]; then
         echo "Error signing Managed Software Center.app: $SIGNING_RESULT"
@@ -566,14 +571,14 @@ if [ "$APPSIGNINGCERT" != "" ]; then
     fi
 
     echo "Signing MunkiStatus.app Frameworks..."
-    /usr/bin/find "$APPROOT/Applications/Managed Software Center.app/Contents/Helpers/MunkiStatus.app/Contents/Frameworks" -type f -perm -u=x -exec /usr/bin/codesign -f -s "$APPSIGNINGCERT" --options runtime --timestamp --verbose {} \;
+    /usr/bin/find "$APPROOT/Applications/Software Center.app/Contents/Helpers/MunkiStatus.app/Contents/Frameworks" -type f -perm -u=x -exec /usr/bin/codesign -f -s "$APPSIGNINGCERT" --options runtime --timestamp --verbose {} \;
     SIGNING_RESULT="$?"
     if [ "$SIGNING_RESULT" -ne 0 ]; then
         echo "Error signing MunkiStatus.app Frameworks: $SIGNING_RESULT"
         exit 2
     fi
     echo "Signing Managed Software Center.app Frameworks..."
-    /usr/bin/find "$APPROOT/Applications/Managed Software Center.app/Contents/Frameworks" -type f -perm -u=x -exec /usr/bin/codesign -f -s "$APPSIGNINGCERT" --options runtime --timestamp --verbose {} \;
+    /usr/bin/find "$APPROOT/Applications/Software Center.app/Contents/Frameworks" -type f -perm -u=x -exec /usr/bin/codesign -f -s "$APPSIGNINGCERT" --options runtime --timestamp --verbose {} \;
     SIGNING_RESULT="$?"
     if [ "$SIGNING_RESULT" -ne 0 ]; then
         echo "Error signing Managed Software Center.app Frameworks: $SIGNING_RESULT"
@@ -582,8 +587,8 @@ if [ "$APPSIGNINGCERT" != "" ]; then
 
     echo "Signing Managed Software Center.app..."
     /usr/bin/codesign -f -s "$APPSIGNINGCERT" --options runtime --timestamp --verbose \
-        "$APPROOT/Applications/Managed Software Center.app/Contents/Helpers/MunkiStatus.app" \
-        "$APPROOT/Applications/Managed Software Center.app"
+        "$APPROOT/Applications/Software Center.app/Contents/Helpers/MunkiStatus.app" \
+        "$APPROOT/Applications/Software Center.app"
     SIGNING_RESULT="$?"
     if [ "$SIGNING_RESULT" -ne 0 ]; then
         echo "Error signing Managed Software Center.app: $SIGNING_RESULT"
@@ -831,8 +836,8 @@ CORETITLE="Munki core tools"
 COREDESC="Core command-line tools used by Munki."
 ADMINTITLE="Munki admin tools"
 ADMINDESC="Command-line munki admin tools."
-APPTITLE="Managed Software Center"
-APPDESC="Managed Software Center application."
+APPTITLE="Software Center"
+APPDESC="Software Center application."
 LAUNCHDTITLE="Munki launchd files"
 LAUNCHDDESC="Core Munki launch daemons and launch agents."
 APPUSAGETITLE="Munki app usage monitoring tool"
