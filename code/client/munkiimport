@@ -624,14 +624,26 @@ def main():
             # Generate the final sanitized package path
             sanitized_pkgpath = os.path.join(os.path.dirname(installer_item), sanitized_name)
             
-            # Rename the installer item to the sanitized path
-            os.rename(installer_item, sanitized_pkgpath)
+            # Try to rename the installer item to the sanitized path
+            # Skip rename if on read-only filesystem
+            source_path = installer_item
+            try:
+                os.rename(installer_item, sanitized_pkgpath)
+                source_path = sanitized_pkgpath
+                print('Copying %s to repo...' % sanitized_name)
+            except OSError as err:
+                if err.errno == 30:  # Read-only file system
+                    print('Skipping rename on read-only filesystem. Copying %s to repo...' % os.path.basename(installer_item))
+                else:
+                    raise  # Re-raise other OSError types
             
-            print('Copying %s to repo...' % sanitized_name)
             uploaded_pkgpath = munkiimportlib.copy_item_to_repo(
-                repo, sanitized_pkgpath, pkginfo.get('version'),
+                repo, source_path, pkginfo.get('version'),
                 options.subdirectory)
-            print('Copied %s to %s.' % (sanitized_name, uploaded_pkgpath))
+            
+            # Print the appropriate copied file name
+            copied_name = sanitized_name if source_path == sanitized_pkgpath else os.path.basename(installer_item)
+            print('Copied %s to %s.' % (copied_name, uploaded_pkgpath))
         except munkiimportlib.RepoCopyError as errmsg:
             print(errmsg, file=sys.stderr)
             cleanup_and_exit(-1)
