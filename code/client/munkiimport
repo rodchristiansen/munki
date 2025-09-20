@@ -53,6 +53,57 @@ from munkilib.admin import munkiimportlib
 from munkilib.admin import pkginfolib
 
 
+def is_git_repository(path):
+    """Check if the given path is inside a git repository"""
+    # Check for .git directory starting from the given path and walking up
+    current_path = path
+    while True:
+        git_path = os.path.join(current_path, ".git")
+        if os.path.exists(git_path) and os.path.isdir(git_path):
+            return True
+        
+        # Move up one directory
+        parent_path = os.path.dirname(current_path)
+        if parent_path == current_path:
+            # Reached the root, no .git found
+            break
+        current_path = parent_path
+    return False
+
+
+def run_git_pull(repo_path):
+    """Run git pull in the specified directory"""
+    try:
+        print(f'Git repository detected, pulling latest changes before import...')
+        cmd = ['git', 'pull']
+        proc = subprocess.Popen(cmd, cwd=repo_path, shell=False, 
+                                bufsize=-1, stdin=subprocess.PIPE,
+                                stdout=subprocess.PIPE, 
+                                stderr=subprocess.PIPE)
+        stdout, stderr = proc.communicate()
+        
+        # Decode output
+        stdout_text = stdout.decode('utf-8') if stdout else ''
+        stderr_text = stderr.decode('utf-8') if stderr else ''
+        
+        if proc.returncode == 0:
+            if stdout_text.strip():
+                print(stdout_text.strip())
+            print('Git pull completed successfully')
+            return True
+        else:
+            print(f'Git pull failed: {stderr_text}', file=sys.stderr)
+            print('Continuing with import anyway...', file=sys.stderr)
+            return False
+    except subprocess.CalledProcessError as err:
+        print(f'Git pull failed: {err}', file=sys.stderr)
+        print('Continuing with import anyway...', file=sys.stderr)
+        return False
+    except FileNotFoundError:
+        print('Git command not found. Skipping git pull.', file=sys.stderr)
+        return False
+
+
 def make_dmg(pkgpath):
     """Wraps a non-flat package into a disk image.
     Returns path to newly-created disk image."""
@@ -347,6 +398,14 @@ def main():
         print(u'Could not connect to munki repo: %s' % err,
               file=sys.stderr)
         exit(-1)
+
+    # Check if repo is a git repository and run git pull if so
+    if isinstance(repo, munkirepo.FileRepo) and hasattr(repo, 'root'):
+        repo_path = repo.root
+        if is_git_repository(repo_path):
+            run_git_pull(repo_path)
+        else:
+            print(f'No git repository detected at {repo_path}, skipping git pull')
 
     if not is_applemetadata:
         if os.path.isdir(installer_item):
