@@ -407,6 +407,15 @@ def main():
         else:
             print(f'No git repository detected at {repo_path}, skipping git pull')
 
+    # Run makecatalogs silently to refresh catalog state before import
+    # (similar to cimiimport pattern)
+    errors = makecatalogslib.makecatalogs(repo, {}, output_fn=None)
+    if errors:
+        print('Warning: Issues occurred while refreshing catalogs before import.')
+        if options.verbose:
+            for error in errors:
+                print(f'  {error}')
+
     if not is_applemetadata:
         if os.path.isdir(installer_item):
             if pkgutils.hasValidDiskImageExt(installer_item):
