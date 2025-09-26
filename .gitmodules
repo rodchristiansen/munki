@@ -4,3 +4,6 @@
 [submodule "code/munkiadmin"]
 	path = code/munkiadmin
 	url = https://github.com/rodchristiansen/munkiadmin.git
+[submodule "code/cli/munki/munkipkg"]
+	path = code/cli/munki/munkipkg
+	url = https://github.com/rodchristiansen/munki-pkg.git
