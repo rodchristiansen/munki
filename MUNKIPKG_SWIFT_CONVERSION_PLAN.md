@@ -1,80 +1,114 @@
-# munkipkg Swift Conversion Plan
+# munkipkg Swift Integration Plan
+
+## 🎉 Major Discovery: Existing Swift Implementation Found!
+
+During the upstream sync process, we discovered that the upstream `munki-pkg` repository already has a **substantial Swift implementation** in the `swift` branch! This changes our approach from "conversion" to "integration and completion".
 
 ## Overview
-This document outlines the plan to convert the Python-based `munkipkg` tool to Swift as part of the Munki v7 project. The `munkipkg` tool is currently a Python script that builds macOS packages from project directories in a consistent, repeatable manner.
+This document outlines the plan to integrate and complete the existing Swift-based `munkipkg` implementation as part of the Munki v7 project. The submodule now points to the Swift branch which contains a partially complete Swift implementation.
 
-## Current Implementation Analysis
+## Current State Analysis
 
-### Python Script Structure (munkipkg)
-- **Location**: `code/cli/munki/munkipkg/munkipkg` (1057 lines of Python)
-- **Main Functions**:
-  - Package creation from project directories
-  - Import existing packages into projects
-  - Build flat packages using Apple's `pkgbuild` and `productbuild`
-  - Support for XML plist, JSON, and YAML build configuration files
-  - Package signing capabilities
-  - Bom info export/sync for git compatibility
+### 🔄 Repository Status (UPDATED)
+- **Submodule Location**: `code/cli/munki/munkipkg` (now on Swift branch)
+- **Python Script**: Still available at `munkipkg` (1057 lines) - serves as reference
+- **Swift Implementation**: Found in `swift/munkipkg/` directory with Xcode project
 
-### Key Features to Port
-1. **Project Creation**: `--create` flag to create new package project templates
-2. **Package Import**: `--import` flag to convert existing packages to projects
-3. **Package Building**: Main functionality to build packages from project directories
-4. **Multiple Config Formats**: Support for plist, JSON, and YAML build-info files
-5. **Package Signing**: Integration with macOS signing infrastructure
-6. **Git Integration**: Bom export/sync for version control compatibility
-7. **Distribution Packages**: Support for distribution-style packages
+### 🚀 Existing Swift Implementation Features
+**Already Implemented:**
+- ✅ **ArgumentParser CLI Structure**: Complete command-line interface using Swift ArgumentParser
+- ✅ **BuildInfo Data Models**: Codable structs for configuration parsing
+- ✅ **Package Signing Support**: SigningInfo struct with certificate handling
+- ✅ **Notarization Support**: NotarizationInfo struct for Apple notarization
+- ✅ **Multiple Config Formats**: Plist, JSON parsing (YAML marked as not supported yet)
+- ✅ **Xcode Project Structure**: Complete with tests and proper Swift project setup
+- ✅ **Error Handling**: Custom error types with inheritance
+
+**Key Swift Files Discovered:**
+1. `munkipkg.swift` - Main command structure with ArgumentParser
+2. `buildinfo.swift` - Configuration data models (BuildInfo, SigningInfo, NotarizationInfo)
+3. `munkipkgoptions.swift` - Command-line option parsing and validation
+4. `cliutils.swift` - CLI utility functions
+5. `errors.swift` - Custom error handling
+6. `BuildInfoTests.swift` - Unit tests for configuration parsing
+
+### 📋 Features Still Needed (Based on Python Reference)
+1. **Package Building**: Core `pkgbuild` and `productbuild` execution
+2. **Project Creation**: `--create` flag implementation with templates
+3. **Package Import**: `--import` flag to convert existing packages
+4. **Payload Processing**: File system operations for payload directory
+5. **Scripts Handling**: Processing of preinstall/postinstall scripts
+6. **BOM Export/Sync**: Git integration features for tracking file permissions
+7. **Distribution Packages**: Support for complex package structures
 
 ### Dependencies Analysis
 - **Python Standard Library**: `glob`, `json`, `optparse`, `os`, `plistlib`, `shutil`, `stat`, `subprocess`, `sys`, `tempfile`
 - **External Dependencies**: `yaml` (PyYAML) - optional
 - **System Tools**: `ditto`, `lsbom`, `pkgbuild`, `pkgutil`, `productbuild`
 
-## Swift Implementation Plan
+## Swift Integration Plan (REVISED)
 
-### 1. Project Structure Setup
-- [ ] Add `munkipkg` target to `Package.swift`
-- [ ] Create `munkipkg/` directory structure
-- [ ] Set up main executable target with dependencies
+### Phase 1: Assessment and Setup (COMPLETED ✅)
+- [x] **Submodule Integration**: Added munkipkg as submodule on Swift branch
+- [x] **Existing Code Analysis**: Reviewed current Swift implementation
+- [x] **Architecture Understanding**: Studied ArgumentParser structure and data models
 
-### 2. Core Architecture Design
-- [ ] Design Swift equivalent command-line interface using ArgumentParser
-- [ ] Create data models for build-info structures
-- [ ] Implement file system operations using Foundation
-- [ ] Design error handling and logging system
+### Phase 2: Complete Core Building Functionality (2-3 weeks)
+- [ ] **Package Building Engine**: Implement the core package creation logic
+  - Process payload directory structure
+  - Execute `pkgbuild` with proper parameters
+  - Handle distribution-style packages via `productbuild`
+- [ ] **Build Info Processing**: Complete the configuration pipeline
+  - Ensure plist/JSON parsing works end-to-end
+  - Add YAML support integration with Yams
+  - Validate build parameters before execution
+- [ ] **File System Operations**: Implement payload and scripts processing
+  - Payload directory validation and processing
+  - Scripts directory handling (preinstall/postinstall)
+  - Permission and ownership management
 
-### 3. Configuration File Support
-- [ ] **Plist Support**: Use `PropertyListSerialization` from Foundation
-- [ ] **JSON Support**: Use `JSONSerialization` from Foundation  
-- [ ] **YAML Support**: Integrate existing Yams dependency from other Munki tools
-- [ ] Create unified configuration parser with format auto-detection
+### Phase 3: Advanced Features (2-3 weeks)
+- [ ] **Project Creation (`--create`)**: Template generation functionality
+- [ ] **Package Import (`--import`)**: Convert existing packages to projects
+- [ ] **BOM Integration**: Git-friendly file tracking
+  - Export BOM info (`--export-bom-info`)
+  - Sync from BOM info (`--sync`)
+- [ ] **Enhanced Signing/Notarization**: Complete the existing partial implementation
 
-### 4. Core Functionality Implementation
+### Phase 4: Integration with Munki v7 (1 week)
+- [ ] **Package.swift Integration**: Add munkipkg to the main Swift package
+- [ ] **Shared Library Usage**: Integrate with MunkiShared where appropriate  
+- [ ] **Consistent Patterns**: Ensure coding style matches other Munki tools
+- [ ] **Build System**: Add to automated build and test processes
 
-#### Phase 1: Basic Package Building
-- [ ] Implement project directory validation
-- [ ] Create payload directory processing
-- [ ] Implement scripts directory handling
-- [ ] Basic `pkgbuild` command execution
-- [ ] Error handling and validation
+## Revised Implementation Strategy
 
-#### Phase 2: Advanced Features
-- [ ] Package import functionality (`--import`)
-- [ ] Project creation (`--create`) with templates
-- [ ] Distribution package support
-- [ ] Package signing integration
-- [ ] Bom export/sync for git compatibility
+### 1. Build on Existing Foundation
+Instead of starting from scratch, we'll:
+- Use the existing ArgumentParser structure as-is
+- Complete the BuildInfo implementation 
+- Add missing core functionality to the established architecture
 
-#### Phase 3: Optimization and Polish
-- [ ] Performance optimization
-- [ ] Comprehensive error messages
-- [ ] Help system and documentation
-- [ ] Unit tests and integration tests
+### 2. Reference-Driven Development
+- Use Python implementation as functional reference
+- Ensure feature parity through systematic comparison
+- Validate against existing munkipkg projects
 
-### 5. Integration with Munki v7
-- [ ] Update `Package.swift` to include munkipkg executable
-- [ ] Ensure consistent coding patterns with other Munki Swift tools
-- [ ] Integrate with shared MunkiShared library where appropriate
-- [ ] Add to build and test systems
+### 3. Swift Package Manager Integration
+```swift
+// Add to main Package.swift in munki CLI tools
+.executableTarget(
+    name: "munkipkg",
+    dependencies: [
+        .product(name: "ArgumentParser", package: "swift-argument-parser"),
+        "Yams",
+        "MunkiShared"
+    ],
+    path: "munkipkg/swift/munkipkg/munkipkg",
+    sources: ["munkipkg.swift", "buildinfo.swift", "munkipkgoptions.swift", 
+              "cliutils.swift", "errors.swift"]
+)
+```
 
 ### 6. Dependencies Required
 - **ArgumentParser**: Command-line argument parsing (already available)
@@ -147,26 +181,28 @@ struct SigningInfo: Codable {
 3. **Compatibility Tests**: Ensure projects created by Python version work with Swift version
 4. **Performance Tests**: Compare performance with Python implementation
 
-## Timeline Estimate
-- **Phase 1 (Basic Building)**: 2-3 weeks
-- **Phase 2 (Advanced Features)**: 2-3 weeks  
-- **Phase 3 (Polish & Testing)**: 1-2 weeks
-- **Total Estimated Time**: 5-8 weeks
+## Timeline Estimate (REVISED)
+- **Phase 1 (Assessment)**: ✅ COMPLETED
+- **Phase 2 (Core Building)**: 2-3 weeks  
+- **Phase 3 (Advanced Features)**: 2-3 weeks
+- **Phase 4 (Integration)**: 1 week
+- **Total Estimated Time**: 5-7 weeks (reduced from 5-8 weeks)
 
-## Success Criteria
-1. ✅ Feature parity with Python implementation
-2. ✅ All existing package projects continue to work
-3. ✅ Performance equal to or better than Python version
-4. ✅ Consistent with other Munki v7 Swift tools
-5. ✅ Comprehensive test coverage
-6. ✅ Documentation updated for Swift version
+## Success Criteria (UPDATED)
+1. ✅ Leverage existing Swift foundation effectively
+2. ✅ Feature parity with Python implementation
+3. ✅ All existing package projects continue to work
+4. ✅ Performance equal to or better than Python version
+5. ✅ Fully integrated with Munki v7 Swift Package Manager structure
+6. ✅ Comprehensive test coverage (building on existing tests)
+7. ✅ Documentation updated for Swift version
 
-## Next Steps
-1. Begin with Package.swift updates to add munkipkg target
-2. Create basic command-line structure using ArgumentParser
-3. Implement configuration file parsing
-4. Start with basic package building functionality
-5. Iterative development with testing against Python version
+## Next Steps (PRIORITIZED)
+1. **Study Existing Swift Code**: Understand current implementation patterns and architecture
+2. **Implement Package Building**: Complete the core functionality using existing data models
+3. **Test Against Python Version**: Ensure compatibility and feature parity
+4. **Add to Main Package.swift**: Integrate with Munki v7 build system
+5. **Complete Missing Features**: Add project creation, import, and BOM functionality
 
 ---
-*This plan will be updated as development progresses and requirements are refined.*
+*This plan has been significantly updated after discovering the existing Swift implementation. The focus has shifted from conversion to completion and integration.*
