@@ -15,6 +15,8 @@ let package = Package(
         .executable(name: "munkiimport", targets: ["munkiimport"]),
         .executable(name: "repoclean", targets: ["repoclean"]),
         .executable(name: "yaml_migrate", targets: ["yaml_migrate"]),
+        .executable(name: "yaml_to_plist", targets: ["yaml_to_plist"]),
+        .executable(name: "munkipkg", targets: ["munkipkg"]),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-argument-parser", from: "1.2.0"),
@@ -74,6 +76,23 @@ let package = Package(
             ],
             path: "yaml_migrate"
         ),
+        .executableTarget(
+            name: "yaml_to_plist",
+            dependencies: [
+                "Yams",
+            ],
+            path: "yaml_to_plist"
+        ),
+        .executableTarget(
+            name: "munkipkg",
+            dependencies: [
+                .product(name: "ArgumentParser", package: "swift-argument-parser"),
+                "Yams",
+                "MunkiShared"
+            ],
+            path: "munkipkg",
+            sources: ["buildinfo.swift", "cliutils.swift", "errors.swift", "munkipkg.swift", "munkipkgoptions.swift"]
+        ),
         .target(
             name: "MunkiShared",
             dependencies: [
@@ -85,10 +104,12 @@ let package = Package(
                 "Predicates.m", 
                 "headers/", 
                 "network/",
-                "admin/readline.swift",
                 "facts.swift",
                 "updatecheck/",
                 "installer/"
+            ],
+            linkerSettings: [
+                .linkedLibrary("edit")
             ]
         ),
     ]
