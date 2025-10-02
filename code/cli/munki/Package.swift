@@ -87,8 +87,7 @@ let package = Package(
             name: "munkipkg",
             dependencies: [
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
-                "Yams",
-                "MunkiShared"
+                "Yams"
             ],
             path: "munkipkg",
             sources: ["buildinfo.swift", "cliutils.swift", "errors.swift", "munkipkg.swift", "munkipkgoptions.swift"]
