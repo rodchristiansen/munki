@@ -20,6 +20,7 @@
 
 import ArgumentParser
 import Foundation
+import MunkiShared
 
 @main
 struct MunkiImport: AsyncParsableCommand {
