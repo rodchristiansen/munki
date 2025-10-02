@@ -1,4 +1,34 @@
-# munkiimport Swift Port - Complete Documentation
+# munkiimport Customizations - Fork Differentiation Documentation
+
+**Purpose:** This document tracks all customizations made to `munkiimport.swift` in our fork that differ from the official [munki/munki](https://github.com/munki/munki) upstream repository. Use this when merging upstream changes to preserve our custom features.
+
+## Repository Comparison
+- **Our Fork:** https://github.com/rodchristiansen/munki/blob/main/code/cli/munki/munkiimport/munkiimport.swift
+- **Official Upstream:** https://github.com/munki/munki/blob/Munki7dev/code/cli/munki/munkiimport/munkiimport.swift
+- **Upstream Branch to Track:** `Munki7dev`
+
+---
+
+## 🎯 TL;DR - What Makes Our Fork Different
+
+We have **10 custom features** (+305 lines) not in official upstream:
+
+| # | Feature | Lines | Why We Need It |
+|---|---------|-------|----------------|
+| 1 | Git pull with rebase fallback | 120-134, 361-390 | Auto-sync repo before imports |
+| 2 | Silent makecatalogs refresh | 348-359 | Keep catalogs up-to-date |
+| 3 | Filename sanitization + arch suffixes | 677-717 | Clean filenames, -Apple/-Intel tags |
+| 4 | Read-only filesystem handling | 702-730 | Import from mounted volumes |
+| 5 | Extended template field copying | 444-501 | Preserve scripts & metadata |
+| 6 | Array path handling | 480-501 | Copy installs/items_to_copy paths |
+| 7 | Interactive architecture editing | 530-571 | Easy arch selection UI |
+| 8 | Catalogs display in matches | 413-427 | Show which catalogs items are in |
+| 9 | Full repo path display | 732-746 | Show absolute paths |
+| 10 | Git repository detection | 120-134 | Walk tree to find .git |
+
+**When merging from upstream:** Keep all 5 custom functions + enhanced sections. See [Merging Upstream Changes](#merging-upstream-changes) section.
+
+---
 
 ## Table of Contents
 1. [Overview](#overview)
@@ -7,7 +37,7 @@
 4. [Implementation Summary](#implementation-summary)
 5. [Testing Guide](#testing-guide)
 6. [Build & Deployment](#build--deployment)
-7. [Commit Message](#commit-message)
+7. [Merging Upstream Changes](#merging-upstream-changes)
 
 ## Quick Reference
 
@@ -1088,6 +1118,133 @@ sudo cp /Users/rod/Developer/munki/code/build/binaries/munkiimport \
 
 ---
 
+## Merging Upstream Changes
+
+### When Fetching from Official munki/munki
+
+When you need to merge changes from the official upstream repository, follow this workflow to preserve your customizations:
+
+#### 1. Fetch Upstream Changes
+```bash
+cd /Users/rod/Developer/munki
+
+# Fetch latest from official upstream
+git fetch upstream Munki7dev
+
+# View what changed in upstream munkiimport
+git diff HEAD..upstream/Munki7dev -- code/cli/munki/munkiimport/munkiimport.swift
+```
+
+#### 2. Identify Conflicts with Customizations
+
+Use this document to identify which sections contain our custom code:
+
+**Custom Functions (Lines 120-134, 361-390, 677-746):**
+- `isGitRepository()` - Lines 120-134
+- `runGitPull()` - Lines 361-390
+- `sanitizeInstallerFilename()` - Lines 677-700
+- `renameInstallerItem()` - Lines 702-730
+- `getFullRepoPath()` - Lines 732-746
+
+**Custom Code Sections:**
+- Git pull integration: Lines 361-390
+- Makecatalogs refresh: Lines 348-359
+- Template field copying: Lines 444-501
+- Interactive editing: Lines 530-571
+- Catalogs display: Lines 413-427
+- Filename sanitization: Lines 677-717
+- Path display: Lines 725-732
+
+#### 3. Merge Strategy Options
+
+**Option A: Manual Merge (Recommended)**
+```bash
+# Create a merge branch
+git checkout -b merge-upstream-munkiimport
+
+# Cherry-pick specific upstream commits
+git cherry-pick <upstream-commit-hash>
+
+# Manually resolve conflicts, preserving customizations
+# Use this document as reference for what to keep
+
+# Test thoroughly
+./tools/build_swift_munki.sh
+./build/binaries/munkiimport --help
+
+# Merge back to main
+git checkout main
+git merge merge-upstream-munkiimport
+```
+
+**Option B: Three-Way Merge**
+```bash
+# Merge upstream branch
+git merge upstream/Munki7dev
+
+# Git will mark conflicts in munkiimport.swift
+# Use this document to decide which changes to keep:
+# - Keep ALL custom functions (they don't exist upstream)
+# - Preserve custom code sections
+# - Accept upstream changes for bug fixes/improvements in non-custom areas
+
+# After resolving:
+git add code/cli/munki/munkiimport/munkiimport.swift
+git commit
+```
+
+#### 4. Verification After Merge
+
+After merging, verify all 10 customizations still work:
+
+```bash
+# Build
+./tools/build_swift_munki.sh
+
+# Quick verification that custom functions exist
+grep -n "isGitRepository" code/cli/munki/munkiimport/munkiimport.swift
+grep -n "sanitizeInstallerFilename" code/cli/munki/munkiimport/munkiimport.swift
+
+# Run full test suite (see Testing Guide section)
+```
+
+#### 5. Update This Document
+
+If upstream changes require modifications to our customizations:
+
+1. Update the line numbers in this document
+2. Document any new integration points
+3. Note any changes to custom function signatures
+4. Update the "Implementation Date" at the bottom
+
+### Conflict Resolution Guide
+
+**If upstream modified...**
+
+| Upstream Change Area | Action |
+|---------------------|--------|
+| Main function signature | Accept upstream, re-integrate our git pull call |
+| Template matching logic | Keep our extended field copying additions |
+| Interactive editing | Preserve our architecture field additions |
+| Filename handling | Keep our sanitization function, may need to update integration point |
+| Catalog operations | Keep our silent makecatalogs calls |
+| Path display | Keep our getFullRepoPath function and calls |
+
+**Always keep:**
+- All 5 custom functions (they're 100% new)
+- Extended field arrays in template copying
+- Architecture field in interactive editing
+- Catalogs field in matching item display
+- Git pull calls and makecatalogs calls
+
+**Safe to accept from upstream:**
+- Bug fixes in non-custom code
+- Performance improvements
+- New command-line options (may need to test compatibility)
+- Code style/formatting changes in non-custom sections
+
+---
+
 ## Commit Message
 
 ### Recommended Commit Message
@@ -1165,46 +1322,49 @@ Implementation Details:
 - Leverages Swift type safety
 - Uses modern async/await patterns
 
-Testing:
-- Verified against Python reference implementation
-- All 10 features tested and working
-- No regressions in existing functionality
-
-Files Changed:
-- code/cli/munki/munkiimport/munkiimport.swift
-- code/cli/munki/munkiimport/customizations.md (new)
+Differs from official munki/munki upstream - see customizations.md
 
 References:
 - Python source: /usr/local/munki/munkiimport (810 lines)
-- Original commits: 3bbf562, 7efe04e, 8047926, cff9498
-```
-
-### Short Commit Message (Alternative)
-
-```
-Port Python munkiimport customizations to Swift (10 features, 100% parity)
-
-Complete port of all customizations from Python version:
-- Git pull with rebase fallback
-- Silent makecatalogs refresh
-- Filename sanitization with arch suffixes
-- Read-only filesystem handling
-- Extended template field copying (scripts, forced_install/uninstall)
-- Array path handling (installs, items_to_copy)
-- Interactive architecture editing
-- Catalogs display in matches
-- Full repo path display
-
-+305 lines, 5 new functions, 100% backward compatible
+- Fork documentation: code/cli/munki/munkiimport/customizations.md
 ```
 
 ---
 
 ## Related Files
 
-- **Python Reference:** `/usr/local/munki/munkiimport` (810 lines)
-- **Swift Implementation:** `/Users/rod/Developer/munki/code/cli/munki/munkiimport/munkiimport.swift` (750 lines)
-- **This Document:** `/Users/rod/Developer/munki/code/cli/munki/munkiimport/customizations.md`
+### Our Fork
+- **This Document:** `code/cli/munki/munkiimport/customizations.md`
+- **Our Implementation:** https://github.com/rodchristiansen/munki/blob/main/code/cli/munki/munkiimport/munkiimport.swift (750 lines)
+- **Local Path:** `/Users/rod/Developer/munki/code/cli/munki/munkiimport/munkiimport.swift`
+
+### Upstream Reference
+- **Official Implementation:** https://github.com/munki/munki/blob/Munki7dev/code/cli/munki/munkiimport/munkiimport.swift
+- **Branch to Track:** `Munki7dev`
+
+### Historical Reference
+- **Original Python Customizations:** `/usr/local/munki/munkiimport` (810 lines)
+- **Fork History:** https://github.com/emilycarru-its-infra/munki/commits/main/code/client/munkiimport
+
+---
+
+## Quick Comparison Command
+
+To quickly see differences between our fork and upstream:
+
+```bash
+# From repository root
+git fetch upstream Munki7dev
+
+# Show diff
+git diff upstream/Munki7dev..HEAD -- code/cli/munki/munkiimport/munkiimport.swift
+
+# Show only function names that differ
+git diff upstream/Munki7dev..HEAD -- code/cli/munki/munkiimport/munkiimport.swift | grep "^[+-]func"
+
+# Count line differences
+git diff --stat upstream/Munki7dev..HEAD -- code/cli/munki/munkiimport/munkiimport.swift
+```
 
 ---
 
