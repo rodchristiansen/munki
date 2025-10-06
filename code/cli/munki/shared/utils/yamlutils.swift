@@ -234,14 +234,14 @@ func yamlToData(_ dataObject: Any) throws -> Data {
 
 /// Attempt to read a file that could be either plist or YAML format
 /// Uses dual-parsing approach: tries preferred format first, falls back to other format
-public func readMixedFormatFile(fromFile filepath: String, preferYaml: Bool = false) throws -> Any? {
+func readMixedFormatFile(fromFile filepath: String, preferYaml: Bool = false) throws -> Any? {
     let data = try Data(contentsOf: URL(fileURLWithPath: filepath))
     return try readData(data, preferYaml: preferYaml, filepath: filepath)
 }
 
 /// Attempt to read data that could be either plist or YAML format
 /// Uses dual-parsing approach: tries preferred format first, falls back to other format
-public func readData(_ data: Data, preferYaml: Bool = false, filepath: String? = nil) throws -> Any? {
+func readData(_ data: Data, preferYaml: Bool = false, filepath: String? = nil) throws -> Any? {
     let fileDescription = filepath ?? "data"
     
     if preferYaml {
@@ -273,7 +273,7 @@ public func readData(_ data: Data, preferYaml: Bool = false, filepath: String? =
 
 /// Detect if file content is likely YAML based on content analysis
 /// This is a heuristic check that looks for YAML-specific patterns
-public func isLikelyYamlContent(_ content: String) -> Bool {
+func isLikelyYamlContent(_ content: String) -> Bool {
     let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
     
     // Check for YAML document separator
@@ -315,7 +315,7 @@ public func isLikelyYamlContent(_ content: String) -> Bool {
 
 /// Smart content-based format detection for files without extensions
 /// Reads file content and uses heuristics to determine format, then parses accordingly
-public func detectFileContent(fromFile filepath: String, preferYaml: Bool = false) throws -> Any? {
+func detectFileContent(fromFile filepath: String, preferYaml: Bool = false) throws -> Any? {
     let content = try String(contentsOfFile: filepath, encoding: .utf8)
     let likelyYaml = isLikelyYamlContent(content)
     
