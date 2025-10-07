@@ -147,6 +147,9 @@ extension ManifestUtil {
             }
             return UserDefaults.standard.bool(forKey: "yaml")
         }
+        
+        /// This command always expands included manifests (that's its purpose)
+        private var expand: Bool { true }
 
         @Argument(help: ArgumentHelp(
             "Prints the contents of the specified manifest",
