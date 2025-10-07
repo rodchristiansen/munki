@@ -24,7 +24,7 @@
 	<array>
 		<string>/usr/local/munki/libexec/launchapp</string>
 		<string>-a</string>
-		<string>/Applications/Managed Software Center.app/Contents/Helpers/munki-notifier.app</string>
+		<string>/Applications/Software Center.app/Contents/Helpers/munki-notifier.app</string>
 	</array>
 </dict>
 </plist>
