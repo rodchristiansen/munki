@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "C04F827A20BB319B00F9C57D"
-               BuildableName = "Managed Software Center.app"
+               BuildableName = "Software Center.app"
                BlueprintName = "Managed Software Center"
                ReferencedContainer = "container:Managed Software Center.xcodeproj">
             </BuildableReference>
@@ -44,7 +44,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "C04F827A20BB319B00F9C57D"
-            BuildableName = "Managed Software Center.app"
+            BuildableName = "Software Center.app"
             BlueprintName = "Managed Software Center"
             ReferencedContainer = "container:Managed Software Center.xcodeproj">
          </BuildableReference>
@@ -61,7 +61,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "C04F827A20BB319B00F9C57D"
-            BuildableName = "Managed Software Center.app"
+            BuildableName = "Software Center.app"
             BlueprintName = "Managed Software Center"
             ReferencedContainer = "container:Managed Software Center.xcodeproj">
          </BuildableReference>
