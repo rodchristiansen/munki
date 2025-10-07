@@ -2,11 +2,15 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>AssociatedBundleIdentifiers</key>
+	<array>
+		<string>com.googlecode.munki.ManagedSoftwareCenter</string>
+	</array>
 	<key>KeepAlive</key>
 	<dict>
 		<key>PathState</key>
 		<dict>
-			<key>/var/run/com.googlecode.munki.ManagedSoftwareCenter</key>
+			<key>/var/run/com.googlecode.munki.SoftwareCenter</key>
 			<true/>
 		</dict>
 	</dict>
@@ -18,7 +22,7 @@
 	</array>
 	<key>ProgramArguments</key>
 	<array>
-		<string>/usr/local/munki/launchapp</string>
+		<string>/usr/local/munki/libexec/launchapp</string>
 		<string>-a</string>
 		<string>/Applications/Software Center.app</string>
 	</array>
