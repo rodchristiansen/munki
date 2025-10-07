@@ -3,7 +3,7 @@
 //  MunkiStatus
 //
 //  Created by Greg Neagle on 5/19/18.
-//  Copyright © 2018-2024 The Munki Project. All rights reserved.
+//  Copyright © 2018-2025 The Munki Project. All rights reserved.
 //
 
 import Foundation
@@ -35,6 +35,27 @@ func atLoginWindow() -> Bool {
         return true
     }
     return (consoleuser! == "loginwindow")
+}
+
+func isBootstrapping() -> Bool {
+    let fm = FileManager.default
+    let path = "/Users/Shared/.com.googlecode.munki.checkandinstallatstartup"
+    if fm.fileExists(atPath: path) {
+        print("Bootstrap run in progress")
+        return true
+    }
+    return false
+}
+
+func isAppleSilicon() -> Bool {
+    var systemInfo = utsname()
+    uname(&systemInfo)
+    let machine = withUnsafePointer(to: &systemInfo.machine) {
+        $0.withMemoryRebound(to: CChar.self, capacity: 1) {
+            String(cString: $0)
+        }
+    }
+    return machine.starts(with: "arm64")
 }
 
 func exec(_ command: String, args: [String]?) -> String {

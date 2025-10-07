@@ -1,7 +1,7 @@
 #!/usr/local/munki/munki-python
 # encoding: utf-8
 #
-# Copyright 2011-2024 Greg Neagle.
+# Copyright 2011-2025 Greg Neagle.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -98,7 +98,7 @@ def earliest_force_install_date():
 
 
 def alert_user_of_forced_logout(info_dict=None):
-    '''Uses Managed Software Center.app to notify the user of an
+    '''Uses Software Center.app to notify the user of an
     upcoming forced logout.
 
     Args:
@@ -106,12 +106,12 @@ def alert_user_of_forced_logout(info_dict=None):
     '''
     consoleuser = osutils.getconsoleuser()
     if not processes.find_processes(
-            exe="/Applications/Managed Software Center.app",
+            exe="/Applications/Software Center.app",
             user=consoleuser):
-        # Managed Software Center.app isn't running.
+        # Software Center.app isn't running.
         # Use our LaunchAgent to start
-        # Managed Software Center.app in the user context.
-        launchfile = '/var/run/com.googlecode.munki.ManagedSoftwareCenter'
+        # Software Center.app in the user context.
+        launchfile = '/var/run/com.googlecode.munki.SoftwareCenter'
         fileref = open(launchfile, 'wb')
         fileref.close()
         # now wait a bit for it to launch before proceeding

@@ -305,32 +305,27 @@ fi
 echo
 
 
-# Build Managed Software Center.
+# Build Software Center.
 echo "Building Managed Software Center.xcodeproj..."
 pushd "$MUNKIROOT/code/apps/Managed Software Center" > /dev/null
-/usr/bin/xcodebuild -project "Managed Software Center.xcodeproj" -alltargets clean > /dev/null
-/usr/bin/xcodebuild -project "Managed Software Center.xcodeproj" -alltargets build > /dev/null
+/usr/bin/xcodebuild -project "Managed Software Center.xcodeproj" -scheme "Managed Software Center" -configuration Release clean > /dev/null
+/usr/bin/xcodebuild -project "Managed Software Center.xcodeproj" -scheme "Managed Software Center" -configuration Release build > /dev/null
 XCODEBUILD_RESULT="$?"
 popd > /dev/null
 if [ "$XCODEBUILD_RESULT" -ne 0 ]; then
-    echo "Error building Managed Software Center.app: $XCODEBUILD_RESULT"
+    echo "Error building Software Center.app: $XCODEBUILD_RESULT"
     exit 2
 fi
 
-MSCAPP="$MUNKIROOT/code/apps/Managed Software Center/build/Release/Managed Software Center.app"
-SOFTWARECENTERAPP="$MUNKIROOT/code/apps/Managed Software Center/build/Release/Software Center.app"
-
-# Copy and rename Managed Software Center.app to Software Center.app
-cp -R "$MSCAPP" "$SOFTWARECENTERAPP"
-
-if [ ! -e "$SOFTWARECENTERAPP" ]; then
-    echo "Failed to create Software Center.app from Managed Software Center.app!"
+MSCAPP="$MUNKIROOT/code/apps/Managed Software Center/build/Release/Software Center.app"
+if [ ! -e "$MSCAPP" ]; then
+    echo "Need a release build of Software Center.app!"
+    echo "Open the Xcode project $MUNKIROOT/code/apps/Managed Software Center/Managed Software Center.xcodeproj and build it."
     exit 2
+else
+    MSCVERSION=$(defaults read "$MSCAPP/Contents/Info" CFBundleShortVersionString)
+    echo "Software Center.app version: $MSCVERSION"
 fi
-
-echo "Software Center.app successfully created."
-
-MSCAPP="$SOFTWARECENTERAPP"
 
 # Build MunkiStatus
 echo "Building MunkiStatus.xcodeproj..."
@@ -547,7 +542,7 @@ echo "Creating applications package source..."
 APPROOT="$PKGTMP/munki_app"
 mkdir -m 1775 "$APPROOT"
 mkdir -m 775 "$APPROOT/Applications"
-# Copy Managed Software Center application.
+# Copy Software Center application.
 cp -R "$MSCAPP" "$APPROOT/Applications/"
 # Create Helper directory
 mkdir -m 775 "$APPROOT/Applications/Software Center.app/Contents/Helpers/"
@@ -560,13 +555,13 @@ chmod -R go-w "$APPROOT/Applications/Software Center.app"
 
 # sign MSC app
 if [ "$APPSIGNINGCERT" != "" ]; then
-    echo "Signing Managed Software Center.app Bundles..."
+    echo "Signing Software Center.app Bundles..."
     /usr/bin/codesign -f -s "$APPSIGNINGCERT" --options runtime --timestamp --verbose \
         "$APPROOT/Applications/Software Center.app/Contents/PlugIns/MSCDockTilePlugin.docktileplugin" \
         "$APPROOT/Applications/Software Center.app/Contents/Helpers/munki-notifier.app"
     SIGNING_RESULT="$?"
     if [ "$SIGNING_RESULT" -ne 0 ]; then
-        echo "Error signing Managed Software Center.app: $SIGNING_RESULT"
+        echo "Error signing Software Center.app: $SIGNING_RESULT"
         exit 2
     fi
 
@@ -577,21 +572,21 @@ if [ "$APPSIGNINGCERT" != "" ]; then
         echo "Error signing MunkiStatus.app Frameworks: $SIGNING_RESULT"
         exit 2
     fi
-    echo "Signing Managed Software Center.app Frameworks..."
+    echo "Signing Software Center.app Frameworks..."
     /usr/bin/find "$APPROOT/Applications/Software Center.app/Contents/Frameworks" -type f -perm -u=x -exec /usr/bin/codesign -f -s "$APPSIGNINGCERT" --options runtime --timestamp --verbose {} \;
     SIGNING_RESULT="$?"
     if [ "$SIGNING_RESULT" -ne 0 ]; then
-        echo "Error signing Managed Software Center.app Frameworks: $SIGNING_RESULT"
+        echo "Error signing Software Center.app Frameworks: $SIGNING_RESULT"
         exit 2
     fi
 
-    echo "Signing Managed Software Center.app..."
+    echo "Signing Software Center.app..."
     /usr/bin/codesign -f -s "$APPSIGNINGCERT" --options runtime --timestamp --verbose \
         "$APPROOT/Applications/Software Center.app/Contents/Helpers/MunkiStatus.app" \
         "$APPROOT/Applications/Software Center.app"
     SIGNING_RESULT="$?"
     if [ "$SIGNING_RESULT" -ne 0 ]; then
-        echo "Error signing Managed Software Center.app: $SIGNING_RESULT"
+        echo "Error signing Software Center.app: $SIGNING_RESULT"
         exit 2
     fi
 fi
@@ -802,7 +797,7 @@ fi
 #################
 if [ "$CLIENTCERTPKG" == "YES" ] ; then
 
-    echo "Creating client cert package souce..."
+    echo "Creating client cert package source..."
 
     # Create directory structure
     CLIENTCERTROOT="$PKGTMP/munki_clientcert"
@@ -836,8 +831,8 @@ CORETITLE="Munki core tools"
 COREDESC="Core command-line tools used by Munki."
 ADMINTITLE="Munki admin tools"
 ADMINDESC="Command-line munki admin tools."
-APPTITLE="Software Center"
-APPDESC="Software Center application."
+APPTITLE="Managed Software Center"
+APPDESC="Managed Software Center application."
 LAUNCHDTITLE="Munki launchd files"
 LAUNCHDDESC="Core Munki launch daemons and launch agents."
 APPUSAGETITLE="Munki app usage monitoring tool"

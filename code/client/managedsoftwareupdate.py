@@ -1,6 +1,6 @@
 # encoding: utf-8
 #
-# Copyright 2009-2024 Greg Neagle.
+# Copyright 2009-2025 Greg Neagle.
 #
 # Licensed under the Apache License, Version 2.0 (the 'License');
 # you may not use this file except in compliance with the License.
@@ -73,6 +73,7 @@ else:
     from munkilib import munkistatus
     from munkilib import osinstaller
     from munkilib import osutils
+    from munkilib import powermgr
     from munkilib import prefs
     from munkilib import processes
     from munkilib import reports
@@ -376,7 +377,7 @@ def startLogoutHelper():
 
 
 def doRestart(shutdown=False):
-    """Handle the need for a restart or a possbile shutdown."""
+    """Handle the need for a restart or a possible shutdown."""
     restartMessage = 'Software installed or removed requires a restart.'
     if shutdown:
         munkilog.log('Software installed or removed requires a shut down.')
@@ -528,6 +529,20 @@ def sendEndNotification():
         userInfo)
 
 
+def activeDisplaySleepAssertion():
+    """Returns a boolean to indicate we have an active assertion preventing
+    display sleep. Idea borrowed from Installomator."""
+    for processName, assertions in powermgr.getIOPMAssertions().items():
+        if (processName != "coreaudiod" and
+            ("PreventUserIdleDisplaySleep" in assertions or
+             "NoDisplaySleepAssertion" in assertions)
+        ):
+            munkilog.log(
+                "%s has an assertion preventing display sleep" % processName)
+            return True
+    return False
+
+
 def notifyUserOfUpdates(force=False):
     """Notify the logged-in user of available updates.
 
@@ -563,6 +578,13 @@ def notifyUserOfUpdates(force=False):
             interval = interval - (6 * 60 * 60)
         nextNotifyDate = lastNotifiedDate.dateByAddingTimeInterval_(interval)
     if force or now.timeIntervalSinceDate_(nextNotifyDate) >= 0:
+        if not force and activeDisplaySleepAssertion():
+            # display sleep assertions are made by Zoom during a meeting,
+            # PowerPoint and Keynote when presenting, and Chrome when playing
+            # a movie. Other apps may make these assertions as well, If we see
+            # such an assertion, don't notify this time.
+            munkilog.log("Skipping user notification because of assertion preventing display sleep")
+            return False
         # record current notification date
         prefs.set_pref('LastNotifiedDate', now)
 
@@ -696,7 +718,7 @@ def main():
         'install without logging out. Not for general use.')
     other_options.add_option(
         '--launchosinstaller', action='store_true',
-        help='Used interally. Not for general use.')
+        help='Used internally. Not for general use.')
     other_options.add_option(
         '--manualcheck', action='store_true',
         help='Used by launchd LaunchAgent when checking manually. Not for '
@@ -913,7 +935,7 @@ def main():
     if options.verbose:
         print('Managed Software Update Tool')
         print('Version %s' % info.get_version())
-        print('Copyright 2010-2024 The Munki Project')
+        print('Copyright 2010-2025 The Munki Project')
         print('https://github.com/munki/munki\n')
 
     display.display_status_major('Starting...')
@@ -1093,7 +1115,7 @@ def main():
         else:
             # staged OS installer is missing
             display.display_error(
-                'Requsted to launch staged OS installer, but no info on a '
+                'Requested to launch staged OS installer, but no info on a '
                 'staged installer was found.')
 
     if updatesavailable or appleupdatesavailable:
