@@ -308,8 +308,9 @@ echo
 # Build Software Center.
 echo "Building Managed Software Center.xcodeproj..."
 pushd "$MUNKIROOT/code/apps/Managed Software Center" > /dev/null
-/usr/bin/xcodebuild -project "Managed Software Center.xcodeproj" -scheme "Managed Software Center" -configuration Release clean > /dev/null
-/usr/bin/xcodebuild -project "Managed Software Center.xcodeproj" -scheme "Managed Software Center" -configuration Release build > /dev/null
+MSCBUILDDIR="$MUNKIROOT/code/apps/Managed Software Center/build/Release"
+/usr/bin/xcodebuild -project "Managed Software Center.xcodeproj" -scheme "Managed Software Center" -configuration Release CONFIGURATION_BUILD_DIR="$MSCBUILDDIR" clean > /dev/null
+/usr/bin/xcodebuild -project "Managed Software Center.xcodeproj" -scheme "Managed Software Center" -configuration Release CONFIGURATION_BUILD_DIR="$MSCBUILDDIR" build > /dev/null
 XCODEBUILD_RESULT="$?"
 popd > /dev/null
 if [ "$XCODEBUILD_RESULT" -ne 0 ]; then
@@ -330,8 +331,9 @@ fi
 # Build MunkiStatus
 echo "Building MunkiStatus.xcodeproj..."
 pushd "$MUNKIROOT/code/apps/MunkiStatus" > /dev/null
-/usr/bin/xcodebuild -project "MunkiStatus.xcodeproj" -alltargets clean > /dev/null
-/usr/bin/xcodebuild -project "MunkiStatus.xcodeproj" -alltargets build > /dev/null
+MSBUILDDIR="$MUNKIROOT/code/apps/MunkiStatus/build/Release"
+/usr/bin/xcodebuild -project "MunkiStatus.xcodeproj" -alltargets CONFIGURATION_BUILD_DIR="$MSBUILDDIR" clean > /dev/null
+/usr/bin/xcodebuild -project "MunkiStatus.xcodeproj" -alltargets CONFIGURATION_BUILD_DIR="$MSBUILDDIR" build > /dev/null
 XCODEBUILD_RESULT="$?"
 popd > /dev/null
 if [ "$XCODEBUILD_RESULT" -ne 0 ]; then
@@ -352,8 +354,9 @@ fi
 # Build munki-notifier
 echo "Building munki-notifier.xcodeproj..."
 pushd "$MUNKIROOT/code/apps/munki-notifier" > /dev/null
-/usr/bin/xcodebuild -project "munki-notifier.xcodeproj" -alltargets clean > /dev/null
-/usr/bin/xcodebuild -project "munki-notifier.xcodeproj" -alltargets build > /dev/null
+NOTIFIERBUILDDIR="$MUNKIROOT/code/apps/munki-notifier/build/Release"
+/usr/bin/xcodebuild -project "munki-notifier.xcodeproj" -alltargets CONFIGURATION_BUILD_DIR="$NOTIFIERBUILDDIR" clean > /dev/null
+/usr/bin/xcodebuild -project "munki-notifier.xcodeproj" -alltargets CONFIGURATION_BUILD_DIR="$NOTIFIERBUILDDIR" build > /dev/null
 XCODEBUILD_RESULT="$?"
 popd > /dev/null
 if [ "$XCODEBUILD_RESULT" -ne 0 ]; then

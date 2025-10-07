@@ -219,7 +219,7 @@ if bash code/tools/make_swift_munki_pkg.sh $BUILD_OPTS 2>&1 | tee "$LOG_FILE"; t
     echo -e "${GREEN}✓ Build completed successfully${NC}"
     
     # Extract package name from log
-    PKG_NAME=$(grep "Distribution package created at" "$LOG_FILE" | awk -F'/' '{print $NF}' | tr -d '.')
+    PKG_NAME=$(grep "Distribution package created at" "$LOG_FILE" | awk -F'/' '{print $NF}' | sed 's/\.$//')
     PKG_PATH="$OUTPUT_DIR/$PKG_NAME"
     
     if [ -f "$PKG_PATH" ]; then
