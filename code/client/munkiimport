@@ -2,7 +2,7 @@
 # -*- python -*-
 # encoding: utf-8
 #
-# Copyright 2010-2023 Greg Neagle.
+# Copyright 2010-2025 Greg Neagle.
 #
 # Licensed under the Apache License, Version 2.0 (the 'License');
 # you may not use this file except in compliance with the License.
@@ -31,7 +31,6 @@ import os
 import subprocess
 import sys
 import tempfile
-import urllib.parse
 
 # our lib imports
 from munkilib.cliutils import ConfigurationSaveError
@@ -53,57 +52,6 @@ from munkilib.admin import munkiimportlib
 from munkilib.admin import pkginfolib
 
 
-def is_git_repository(path):
-    """Check if the given path is inside a git repository"""
-    # Check for .git directory starting from the given path and walking up
-    current_path = path
-    while True:
-        git_path = os.path.join(current_path, ".git")
-        if os.path.exists(git_path) and os.path.isdir(git_path):
-            return True
-        
-        # Move up one directory
-        parent_path = os.path.dirname(current_path)
-        if parent_path == current_path:
-            # Reached the root, no .git found
-            break
-        current_path = parent_path
-    return False
-
-
-def run_git_pull(repo_path):
-    """Run git pull in the specified directory"""
-    try:
-        print(f'Git repository detected, pulling latest changes before import...')
-        cmd = ['git', 'pull']
-        proc = subprocess.Popen(cmd, cwd=repo_path, shell=False, 
-                                bufsize=-1, stdin=subprocess.PIPE,
-                                stdout=subprocess.PIPE, 
-                                stderr=subprocess.PIPE)
-        stdout, stderr = proc.communicate()
-        
-        # Decode output
-        stdout_text = stdout.decode('utf-8') if stdout else ''
-        stderr_text = stderr.decode('utf-8') if stderr else ''
-        
-        if proc.returncode == 0:
-            if stdout_text.strip():
-                print(stdout_text.strip())
-            print('Git pull completed successfully')
-            return True
-        else:
-            print(f'Git pull failed: {stderr_text}', file=sys.stderr)
-            print('Continuing with import anyway...', file=sys.stderr)
-            return False
-    except subprocess.CalledProcessError as err:
-        print(f'Git pull failed: {err}', file=sys.stderr)
-        print('Continuing with import anyway...', file=sys.stderr)
-        return False
-    except FileNotFoundError:
-        print('Git command not found. Skipping git pull.', file=sys.stderr)
-        return False
-
-
 def make_dmg(pkgpath):
     """Wraps a non-flat package into a disk image.
     Returns path to newly-created disk image."""
@@ -112,7 +60,7 @@ def make_dmg(pkgpath):
     print('Making disk image containing %s...' % pkgname)
     diskimagename = os.path.splitext(pkgname)[0] + '.dmg'
     diskimagepath = os.path.join(osutils.tmpdir(), diskimagename)
-    cmd = ['sudo', '/usr/bin/hdiutil', 'create', '-fs', 'HFS+',
+    cmd = ['/usr/bin/hdiutil', 'create', '-fs', 'HFS+',
            '-srcfolder', pkgpath, diskimagepath]
     proc = subprocess.Popen(cmd, shell=False, bufsize=-1,
                             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
@@ -253,24 +201,7 @@ def configure():
         _configure(prompt_list)
     except ConfigurationSaveError:
         pass
-        
-def get_repo_path_from_plist():
-    """Fetch the repo_url from com.googlecode.munki.munkiimport.plist"""
-    try:
-        # Expand '~' in the path to the full home directory path
-        plist_path = os.path.expanduser('~/Library/Preferences/com.googlecode.munki.munkiimport.plist')
 
-        # Use the 'defaults' command to read the plist
-        output = subprocess.check_output([
-            'defaults', 'read', plist_path, 'repo_url'
-        ]).decode('utf-8').strip()
-        
-        # Remove the 'file://' prefix and decode URL encoded characters
-        repo_path = urllib.parse.urlparse(output).path
-        return repo_path
-    except subprocess.CalledProcessError as err:
-        print(f"Error fetching repo_url from plist: {err}", file=sys.stderr)
-        sys.exit(1)  # Exit immediately if repo_url cannot be fetched
 
 def main():
     """Main routine"""
@@ -399,23 +330,6 @@ def main():
               file=sys.stderr)
         exit(-1)
 
-    # Check if repo is a git repository and run git pull if so
-    if isinstance(repo, munkirepo.FileRepo) and hasattr(repo, 'root'):
-        repo_path = repo.root
-        if is_git_repository(repo_path):
-            run_git_pull(repo_path)
-        else:
-            print(f'No git repository detected at {repo_path}, skipping git pull')
-
-    # Run makecatalogs silently to refresh catalog state before import
-    # (similar to cimiimport pattern)
-    errors = makecatalogslib.makecatalogs(repo, {}, output_fn=None)
-    if errors:
-        print('Warning: Issues occurred while refreshing catalogs before import.')
-        if options.verbose:
-            for error in errors:
-                print(f'  {error}')
-
     if not is_applemetadata:
         if os.path.isdir(installer_item):
             if pkgutils.hasValidDiskImageExt(installer_item):
@@ -478,33 +392,25 @@ def main():
                     matchingpkginfo['installer_item_hash'] ==
                     pkginfo.get('installer_item_hash')):
                 exactmatch = True
-                print('***This item is identical to an existing item in the repo***:')
+                print ('***This item is identical to an existing item in '
+                       'the repo***:')
             else:
                 print('This item is similar to an existing item in the repo:')
-            
             fields = (('Item name', 'name'),
                       ('Display name', 'display_name'),
                       ('Description', 'description'),
                       ('Version', 'version'),
-                      ('Installer item path', 'installer_item_location'),
-                      ('Catalogs', 'catalogs'))
-            
+                      ('Installer item path', 'installer_item_location'))
             for (name, key) in fields:
-                value = matchingpkginfo.get(key, '')
-                if key == 'catalogs':
-                    value = ', '.join(str(item) for item in value) if value else ''
-                print('%21s: %s' % (name, value))
-
+                print('%21s: %s' % (name, matchingpkginfo.get(key, '')))
             print()
-            
             if exactmatch:
                 answer = get_input('Import this item anyway? [y/N] ')
                 if not answer.lower().startswith('y'):
                     cleanup_and_exit(0)
-        
+
             answer = get_input('Use existing item as a template? [y/N] ')
             if answer.lower().startswith('y'):
-                # Copy properties from the existing pkginfo
                 pkginfo['name'] = matchingpkginfo['name']
                 pkginfo['display_name'] = (
                     matchingpkginfo.get('display_name') or
@@ -512,16 +418,10 @@ def main():
                     matchingpkginfo['name'])
                 pkginfo['description'] = pkginfo.get('description') or \
                     matchingpkginfo.get('description', '')
-                
-                # Set the catalogs from the existing matching item
-                pkginfo['catalogs'] = matchingpkginfo.get('catalogs', [])
-        
                 if (options.subdirectory == '' and
                         matchingpkginfo.get('installer_item_location')):
                     options.subdirectory = os.path.dirname(
                         matchingpkginfo['installer_item_location'])
-                
-                # Copy additional attributes from the existing pkginfo
                 for key in ['blocking_applications',
                             'forced_install',
                             'forced_uninstall',
@@ -534,28 +434,10 @@ def main():
                             'icon_name',
                             'unused_software_removal_info',
                             'localized_strings',
-                            'featured',
-                            'preinstall_script',
-                            'postinstall_script',
-                            'installcheck_script',
-                            'uninstallcheck_script',
-                            'postuninstall_script',
-                            'uninstall_script']:
+                            'featured']:
                     if key in matchingpkginfo:
-                        if not key.endswith('_script'):
-                            print('Copying %s: %s' % (key, matchingpkginfo[key]))
+                        print('Copying %s: %s' % (key, matchingpkginfo[key]))
                         pkginfo[key] = matchingpkginfo[key]
-                
-                # Handle installs and items_to_copy arrays specifically
-                if 'installs' in matchingpkginfo:
-                    for index, install in enumerate(pkginfo.get('installs', [])):
-                        matching_install = matchingpkginfo['installs'][index]
-                        install['path'] = matching_install.get('path', install.get('path'))
-        
-                if 'items_to_copy' in matchingpkginfo:
-                    for index, item in enumerate(pkginfo.get('items_to_copy', [])):
-                        matching_item = matchingpkginfo['items_to_copy'][index]
-                        item['destination_path'] = matching_item.get('destination_path', item.get('destination_path'))
 
         # now let user do some basic editing
         editfields = (('Item name', 'name', 'str'),
@@ -566,23 +448,17 @@ def main():
                       ('Developer', 'developer', 'str'),
                       ('Unattended install', 'unattended_install', 'bool'),
                       ('Unattended uninstall', 'unattended_uninstall', 'bool'),
-                      ('Architecture(s)', 'supported_architectures', 'str')
                      )
-        
         for (name, key, kind) in editfields:
             prompt = '%20s: ' % name
-            if key == 'supported_architectures':
-                default = ', '.join(pkginfo.get(key, ['x86_64', 'arm64']))
-            elif kind == 'bool':
-                default = str(pkginfo.get(key, True))
+            if kind == 'bool':
+                default = str(pkginfo.get(key, False))
             else:
                 default = pkginfo.get(key, '')
             pkginfo[key] = get_input_with_default(prompt, default)
             if kind == 'bool':
                 value = pkginfo[key].lower().strip()
                 pkginfo[key] = value.startswith(('y', 't'))
-            elif key == 'supported_architectures':
-                pkginfo[key] = [arch.strip() for arch in pkginfo[key].split(',')]
 
         # special handling for catalogs array
         prompt = '%20s: ' % 'Catalogs'
@@ -669,49 +545,12 @@ def main():
 
     if not is_applemetadata:
         try:
-            # Get the original file extension (e.g., .pkg, .dmg, .app)
-            file_extension = os.path.splitext(installer_item)[1]
-            
-            # Sanitize the package filename by removing spaces and preserving the original extension
-            sanitized_name = f"{pkginfo['name'].replace(' ', '')}"
-            
-            # Append the version if it's not already part of the name
-            if f"-{pkginfo['version'].replace(' ', '')}" not in sanitized_name:
-                sanitized_name += f"-{pkginfo['version'].replace(' ', '')}"
-            
-            # Check supported architectures and append appropriate suffix
-            architectures = pkginfo.get('supported_architectures', [])
-            if architectures == ['arm64']:
-                sanitized_name += "-Apple"
-            elif architectures == ['x86_64']:
-                sanitized_name += "-Intel"
-            
-            # Add back the original file extension
-            sanitized_name += file_extension
-            
-            # Generate the final sanitized package path
-            sanitized_pkgpath = os.path.join(os.path.dirname(installer_item), sanitized_name)
-            
-            # Try to rename the installer item to the sanitized path
-            # Skip rename if on read-only filesystem
-            source_path = installer_item
-            try:
-                os.rename(installer_item, sanitized_pkgpath)
-                source_path = sanitized_pkgpath
-                print('Copying %s to repo...' % sanitized_name)
-            except OSError as err:
-                if err.errno == 30:  # Read-only file system
-                    print('Skipping rename on read-only filesystem. Copying %s to repo...' % os.path.basename(installer_item))
-                else:
-                    raise  # Re-raise other OSError types
-            
+            print('Copying %s to repo...' % os.path.basename(installer_item))
             uploaded_pkgpath = munkiimportlib.copy_item_to_repo(
-                repo, source_path, pkginfo.get('version'),
+                repo, installer_item, pkginfo.get('version'),
                 options.subdirectory)
-            
-            # Print the appropriate copied file name
-            copied_name = sanitized_name if source_path == sanitized_pkgpath else os.path.basename(installer_item)
-            print('Copied %s to %s.' % (copied_name, uploaded_pkgpath))
+            print('Copied %s to %s.'
+                  % (os.path.basename(installer_item), uploaded_pkgpath))
         except munkiimportlib.RepoCopyError as errmsg:
             print(errmsg, file=sys.stderr)
             cleanup_and_exit(-1)
@@ -750,24 +589,20 @@ def main():
         # possibly edit the pkginfo file in the user's editor
         pkginfo = edit_pkginfo_in_editor(pkginfo)
     try:
-        # Get the dynamic repo root path from plist
-        repo_root = get_repo_path_from_plist()
-        
-        # Once pkginfo is saved, construct the full path with repo_root
         pkginfo_path = munkiimportlib.copy_pkginfo_to_repo(
             repo, pkginfo, options.subdirectory)
-        
-        # Build and print the full path using repo_root
-        full_pkginfo_path = os.path.join(repo_root, 'pkgsinfo', options.subdirectory, os.path.basename(pkginfo_path))
-        print('Saved pkginfo to: %s' % full_pkginfo_path)
+        print('Saved pkginfo to %s.' % pkginfo_path)
     except munkiimportlib.RepoCopyError as errmsg:
         print(errmsg, file=sys.stderr)
         cleanup_and_exit(-1)
 
     if not options.nointeractive:
-        make_catalogs(repo, options)
+        answer = get_input('Rebuild catalogs? [y/N] ')
+        if answer.lower().startswith('y'):
+            make_catalogs(repo, options)
 
     cleanup_and_exit(0)
+
 
 if __name__ == '__main__':
     main()
