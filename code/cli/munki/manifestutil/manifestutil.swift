@@ -76,6 +76,7 @@ struct ManifestUtil: AsyncParsableCommand {
             CopyManifest.self,
             RenameManifest.self,
             DeleteManifest.self,
+            Convert.self,
             Configure.self,
             Version.self,
             RunInteractive.self,
@@ -119,7 +120,7 @@ extension ManifestUtil {
         static var configuration = CommandConfiguration(abstract: "Print version information.")
 
         func run() throws {
-            print(CLI_TOOLS_VERSION)
+            print(getVersion())
         }
     }
 }
