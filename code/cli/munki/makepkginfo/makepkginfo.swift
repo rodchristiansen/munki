@@ -26,7 +26,10 @@ import MunkiShared
 struct MakePkgInfo: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "makepkginfo",
-        abstract: "Creates a pkginfo file (or fragment thereof) from given input."
+        abstract: "Creates a pkginfo file (or fragment thereof) from given input.",
+        subcommands: [
+            Convert.self,
+        ]
     )
 
     @OptionGroup(title: "Pkginfo Override Options")
@@ -59,14 +62,11 @@ struct MakePkgInfo: ParsableCommand {
     @Flag(name: [.long, .customShort("V")],
           help: "Print the version of the Munki tools and exit.")
     var version = false
-
+    
     @Flag(help: "Output in YAML format instead of XML plist.")
     var yaml = false
 
-    @Argument(help: ArgumentHelp(
-        "Path to installer item (package or disk image).",
-        valueName: "installer-item"
-    ))
+    @Argument(help: "Path to installer item (package or disk image)")
     var installerItem: String?
     
     /// Determine if YAML output should be used based on flag or global preference
