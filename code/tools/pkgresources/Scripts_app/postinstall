@@ -3,7 +3,7 @@
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin
 
 # relaunch MSC.app if it was running before we upgraded it
-MSC_APP="/Applications/Managed Software Center.app"
+MSC_APP="/Applications/Software Center.app"
 
 if [ "$3" == "/" ]; then
     if [ -e /tmp/com.googlecode.munki.relaunch_msc_app ] ; then

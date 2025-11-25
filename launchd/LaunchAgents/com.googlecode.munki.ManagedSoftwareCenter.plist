@@ -10,7 +10,7 @@
 	<dict>
 		<key>PathState</key>
 		<dict>
-			<key>/var/run/com.googlecode.munki.ManagedSoftwareCenter</key>
+			<key>/var/run/com.googlecode.munki.SoftwareCenter</key>
 			<true/>
 		</dict>
 	</dict>
@@ -24,7 +24,7 @@
 	<array>
 		<string>/usr/local/munki/libexec/launchapp</string>
 		<string>-a</string>
-		<string>/Applications/Managed Software Center.app</string>
+		<string>/Applications/Software Center.app</string>
 	</array>
 </dict>
 </plist>
