@@ -112,9 +112,7 @@ extension ManifestUtil {
         func run() async throws {
             guard let repo = RepoConnection.shared.repo else { return }
             if var manifest = await getManifest(repo: repo, name: manifestName) {
-                if expand {
-                    manifest = await expandIncludedManifests(repo: repo, manifest: manifest)
-                }
+                manifest = await expandIncludedManifests(repo: repo, manifest: manifest)
                 if xml {
                     print((try? plistToString(manifest)) ?? "")
                 } else {
@@ -127,7 +125,7 @@ extension ManifestUtil {
     }
 }
 
-/// Prints contents of a given manifest, expanding included maniifests
+/// Prints contents of a given manifest, expanding included manifests
 extension ManifestUtil {
     struct ExpandIncludedManifests: AsyncParsableCommand {
         static var configuration = CommandConfiguration(
