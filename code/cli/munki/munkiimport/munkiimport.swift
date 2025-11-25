@@ -226,6 +226,210 @@ func renameInstallerItem(from sourcePath: String, to destinationPath: String) ->
     }
 }
 
+// MARK: - Git Integration Functions
+
+/// Check if the given path is inside a git repository
+func isGitRepository(_ path: String) -> Bool {
+    var currentPath = path
+    let fileManager = FileManager.default
+    
+    // Walk up the directory tree looking for .git folder
+    while currentPath != "/" {
+        let gitPath = (currentPath as NSString).appendingPathComponent(".git")
+        if fileManager.fileExists(atPath: gitPath) {
+            return true
+        }
+        currentPath = (currentPath as NSString).deletingLastPathComponent
+    }
+    return false
+}
+
+/// Run git pull in the specified directory with smart conflict handling
+func runGitPull(repoPath: String) -> Bool {
+    print("Git repository detected, pulling latest changes before import...")
+    
+    let task = Process()
+    task.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+    task.arguments = ["pull"]
+    task.currentDirectoryURL = URL(fileURLWithPath: repoPath)
+    
+    let outputPipe = Pipe()
+    let errorPipe = Pipe()
+    task.standardOutput = outputPipe
+    task.standardError = errorPipe
+    
+    do {
+        try task.run()
+        task.waitUntilExit()
+        
+        let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
+        let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
+        
+        let stdoutText = String(data: outputData, encoding: .utf8) ?? ""
+        let stderrText = String(data: errorData, encoding: .utf8) ?? ""
+        
+        if !stdoutText.isEmpty {
+            print(stdoutText.trimmingCharacters(in: .whitespacesAndNewlines))
+        }
+        
+        if task.terminationStatus == 0 {
+            print("Git pull completed successfully")
+            return true
+        } else {
+            // Check if failure is due to merge conflicts or divergent branches
+            let conflictIndicators = [
+                "CONFLICT",
+                "Automatic merge failed",
+                "divergent branches",
+                "Please commit your changes",
+                "have diverged"
+            ]
+            
+            let hasConflicts = conflictIndicators.contains { indicator in
+                stdoutText.contains(indicator) || stderrText.contains(indicator)
+            }
+            
+            if hasConflicts {
+                print("Git pull failed with conflicts, attempting rebase with autostash...")
+                
+                // Try git pull with rebase and autostash
+                let rebaseTask = Process()
+                rebaseTask.executableURL = URL(fileURLWithPath: "/usr/bin/git")
+                rebaseTask.arguments = ["pull", "--rebase", "--autostash"]
+                rebaseTask.currentDirectoryURL = URL(fileURLWithPath: repoPath)
+                
+                let rebaseOutputPipe = Pipe()
+                let rebaseErrorPipe = Pipe()
+                rebaseTask.standardOutput = rebaseOutputPipe
+                rebaseTask.standardError = rebaseErrorPipe
+                
+                try rebaseTask.run()
+                rebaseTask.waitUntilExit()
+                
+                let rebaseOutputData = rebaseOutputPipe.fileHandleForReading.readDataToEndOfFile()
+                let rebaseErrorData = rebaseErrorPipe.fileHandleForReading.readDataToEndOfFile()
+                
+                let rebaseStdoutText = String(data: rebaseOutputData, encoding: .utf8) ?? ""
+                let rebaseStderrText = String(data: rebaseErrorData, encoding: .utf8) ?? ""
+                
+                if rebaseTask.terminationStatus == 0 {
+                    if !rebaseStdoutText.isEmpty {
+                        print(rebaseStdoutText.trimmingCharacters(in: .whitespacesAndNewlines))
+                    }
+                    print("Git pull with rebase completed successfully")
+                    return true
+                } else {
+                    printStderr("Git pull with rebase also failed: \(rebaseStderrText.trimmingCharacters(in: .whitespacesAndNewlines))")
+                    print("Continuing with import anyway...")
+                    return false
+                }
+            } else {
+                if !stderrText.isEmpty {
+                    printStderr("Git pull failed: \(stderrText.trimmingCharacters(in: .whitespacesAndNewlines))")
+                }
+                print("Continuing with import anyway...")
+                return false
+            }
+        }
+    } catch {
+        printStderr("Error running git pull: \(error)")
+        print("Continuing with import...")
+        return false
+    }
+}
+
+// MARK: - Repo Path Helper Functions
+
+/// Get the full absolute path to the repo root from URL
+func getRepoRootPath(from repoURL: String, repo: Repo) -> String? {
+    if let filerepo = repo as? FileRepo {
+        return filerepo.root
+    }
+    
+    // Try to parse file:// URL
+    if repoURL.hasPrefix("file://") {
+        if let url = URL(string: repoURL) {
+            return url.path
+        }
+    }
+    
+    return nil
+}
+
+// MARK: - Filename Sanitization Functions
+
+/// Sanitize the installer item filename with architecture suffix
+func sanitizeInstallerFilename(originalPath: String, pkginfo: PlistDict) -> String {
+    let fileManager = FileManager.default
+    let fileExtension = (originalPath as NSString).pathExtension
+    let baseExtension = fileExtension.isEmpty ? "" : ".\(fileExtension)"
+    
+    // Get name and version from pkginfo
+    guard let name = pkginfo["name"] as? String,
+          let version = pkginfo["version"] as? String else {
+        return originalPath
+    }
+    
+    // Remove spaces from name
+    var sanitizedName = name.replacingOccurrences(of: " ", with: "")
+    
+    // Add version if not already in the name
+    let versionWithoutSpaces = version.replacingOccurrences(of: " ", with: "")
+    if !sanitizedName.contains("-\(versionWithoutSpaces)") {
+        sanitizedName += "-\(versionWithoutSpaces)"
+    }
+    
+    // Add architecture suffix based on supported_architectures
+    if let architectures = pkginfo["supported_architectures"] as? [String] {
+        if architectures == ["arm64"] {
+            sanitizedName += "-Apple"
+        } else if architectures == ["x86_64"] {
+            sanitizedName += "-Intel"
+        }
+        // Multiple or other architectures get no suffix
+    }
+    
+    // Add back the file extension
+    sanitizedName += baseExtension
+    
+    // Build the new path in the same directory
+    let originalDirectory = (originalPath as NSString).deletingLastPathComponent
+    let sanitizedPath = (originalDirectory as NSString).appendingPathComponent(sanitizedName)
+    
+    return sanitizedPath
+}
+
+/// Rename installer item with read-only filesystem handling
+func renameInstallerItem(from sourcePath: String, to destinationPath: String) -> String {
+    let fileManager = FileManager.default
+    
+    // If source and destination are the same, no need to rename
+    if sourcePath == destinationPath {
+        return sourcePath
+    }
+    
+    do {
+        // Remove destination if it already exists
+        if fileManager.fileExists(atPath: destinationPath) {
+            try fileManager.removeItem(atPath: destinationPath)
+        }
+        
+        try fileManager.moveItem(atPath: sourcePath, toPath: destinationPath)
+        let sanitizedName = (destinationPath as NSString).lastPathComponent
+        print("Renamed to \(sanitizedName)")
+        return destinationPath
+    } catch let error as NSError {
+        // Check for read-only filesystem error (EROFS = 30)
+        if error.code == 30 || error.domain == NSCocoaErrorDomain && error.code == NSFileWriteVolumeReadOnlyError {
+            print("Skipping rename on read-only filesystem...")
+            return sourcePath
+        } else {
+            printStderr("Warning: Could not rename file: \(error.localizedDescription)")
+            return sourcePath
+        }
+    }
+}
+
 @main
 struct MunkiImport: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
@@ -372,7 +576,7 @@ struct MunkiImport: AsyncParsableCommand {
         guard let repoURL = munkiImportOptions.repoURL,
               let plugin = munkiImportOptions.plugin
         else {
-            // won't happen because we validated it earlier
+            // won"t happen because we validated it earlier
             throw ExitCode(1)
         }
 

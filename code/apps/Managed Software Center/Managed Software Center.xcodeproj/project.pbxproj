@@ -110,7 +110,7 @@
 		C04CA61920E682AE00711461 /* passwdutil.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = passwdutil.swift; sourceTree = "<group>"; };
 		C04CA61B20E68B1800711461 /* authrestart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = authrestart.swift; sourceTree = "<group>"; };
 		C04CA61D20E6ADA100711461 /* MainWindowController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MainWindowController.swift; sourceTree = "<group>"; };
-		C04F827B20BB319B00F9C57D /* Managed Software Center.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Managed Software Center.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		C04F827B20BB319B00F9C57D /* Managed Software Center.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = "Managed Software Center.app"; path = "Software Center.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		C04F827E20BB319B00F9C57D /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		C04F828020BB319B00F9C57D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C04F828320BB319B00F9C57D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
@@ -766,7 +766,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				PRODUCT_BUNDLE_IDENTIFIER = com.googlecode.munki.ManagedSoftwareCenter;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "Software Center";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 5.0;
 			};
@@ -790,7 +790,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				PRODUCT_BUNDLE_IDENTIFIER = com.googlecode.munki.ManagedSoftwareCenter;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "Software Center";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 5.0;
 			};
