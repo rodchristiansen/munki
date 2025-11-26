@@ -20,6 +20,7 @@
 
 import ArgumentParser
 import Foundation
+import MunkiShared
 
 func connectToRepo() throws -> Repo {
     guard let repoURL = adminPref("repo_url") as? String else {

@@ -7,6 +7,34 @@
 
 import Foundation
 
+// C function declarations for readline/libedit
+@_silgen_name("readline")
+func readline(_ prompt: UnsafePointer<CChar>?) -> UnsafeMutablePointer<CChar>?
+
+@_silgen_name("rl_line_buffer")
+var rl_line_buffer: UnsafeMutablePointer<CChar>?
+
+@_silgen_name("rl_free_line_state")
+func rl_free_line_state()
+
+@_silgen_name("rl_cleanup_after_signal")
+func rl_cleanup_after_signal()
+
+@_silgen_name("rl_deprep_terminal")
+func rl_deprep_terminal()
+
+@_silgen_name("rl_set_prompt")
+func rl_set_prompt(_ prompt: UnsafePointer<CChar>?)
+
+@_silgen_name("rl_insert_text")
+func rl_insert_text(_ text: UnsafePointer<CChar>?)
+
+@_silgen_name("rl_forced_update_display")
+func rl_forced_update_display()
+
+@_silgen_name("free")
+func free(_ ptr: UnsafeMutableRawPointer?)
+
 /// This is a function that is called by our custom signal handlers that react to SIGINT or SIGTERM.
 /// Without this, the terminal can be a mess if someone hits Control-C to interrupt the process while
 /// `readline` is waiting for input
@@ -32,12 +60,22 @@ func getInput(prompt: String? = nil, defaultText: String? = nil) -> String? {
     // the readline implementation is so broken
     let queue = OperationQueue()
     let insertOperation = BlockOperation {
-        usleep(10000) // 0.01 seconds
-        rl_set_prompt(prompt ?? "")
-        if let defaultText {
-            rl_insert_text(defaultText)
+        var counter = 10
+        while counter > 0 {
+            // sleep until rl_line_buffer is initialized
+            usleep(10000) // 0.01 second
+            if rl_line_buffer != nil {
+                // rl_line_buffer is initialized --
+                // set prompt and insert default text
+                rl_set_prompt(prompt ?? "")
+                if let defaultText {
+                    rl_insert_text(defaultText)
+                }
+                rl_forced_update_display()
+                break
+            }
+            counter -= 1
         }
-        rl_forced_update_display()
     }
     queue.addOperation(insertOperation)
 
