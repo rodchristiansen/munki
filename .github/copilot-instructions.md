@@ -33,6 +33,8 @@
 - **Python Bridge** (`yaml_bridge.py`): Multi-format conversion utility
 - **Build System**: CocoaPods integration successful
 - **Error Handling**: Graceful fallback to plist if YAML parsing fails
+- **Python Bridge**: Uses system Python 3 with PyYAML for YAML parsing
+- **MunkiAdmin**: Reads and displays YAML files correctly
 
 ## Technical Context
 
@@ -119,8 +121,6 @@
 ### Sample YAML Files Working
 - `sample_firefox.yaml` - Complete package metadata
 - `sample_dev_manifest.yaml` - Manifest configuration
-- **Python Bridge**: Uses system Python 3 with PyYAML for YAML parsing
-- **MunkiAdmin**: Reads and displays YAML files correctly
 
 ## Current Status
 **Last Session Date**: August 31, 2025  
