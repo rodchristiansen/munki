@@ -1,0 +1,21 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build makecatalogs",
+			"type": "shell",
+			"command": "swift",
+			"args": [
+				"build",
+				"-c",
+				"release",
+				"--target",
+				"makecatalogs"
+			],
+			"problemMatcher": [
+				"$swift"
+			],
+			"group": "build"
+		}
+	]
+}

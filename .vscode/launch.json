@@ -1,0 +1,130 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:munki}/code/cli/munki",
+            "name": "Debug makepkginfo (code/cli/munki)",
+            "program": "${workspaceFolder:munki}/code/cli/munki/.build/debug/makepkginfo",
+            "preLaunchTask": "swift: Build Debug makepkginfo (code/cli/munki)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:munki}/code/cli/munki",
+            "name": "Release makepkginfo (code/cli/munki)",
+            "program": "${workspaceFolder:munki}/code/cli/munki/.build/release/makepkginfo",
+            "preLaunchTask": "swift: Build Release makepkginfo (code/cli/munki)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:munki}/code/cli/munki",
+            "name": "Debug makecatalogs (code/cli/munki)",
+            "program": "${workspaceFolder:munki}/code/cli/munki/.build/debug/makecatalogs",
+            "preLaunchTask": "swift: Build Debug makecatalogs (code/cli/munki)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:munki}/code/cli/munki",
+            "name": "Release makecatalogs (code/cli/munki)",
+            "program": "${workspaceFolder:munki}/code/cli/munki/.build/release/makecatalogs",
+            "preLaunchTask": "swift: Build Release makecatalogs (code/cli/munki)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:munki}/code/cli/munki",
+            "name": "Debug manifestutil (code/cli/munki)",
+            "program": "${workspaceFolder:munki}/code/cli/munki/.build/debug/manifestutil",
+            "preLaunchTask": "swift: Build Debug manifestutil (code/cli/munki)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:munki}/code/cli/munki",
+            "name": "Release manifestutil (code/cli/munki)",
+            "program": "${workspaceFolder:munki}/code/cli/munki/.build/release/manifestutil",
+            "preLaunchTask": "swift: Build Release manifestutil (code/cli/munki)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:munki}/code/cli/munki",
+            "name": "Debug munkiimport (code/cli/munki)",
+            "program": "${workspaceFolder:munki}/code/cli/munki/.build/debug/munkiimport",
+            "preLaunchTask": "swift: Build Debug munkiimport (code/cli/munki)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:munki}/code/cli/munki",
+            "name": "Release munkiimport (code/cli/munki)",
+            "program": "${workspaceFolder:munki}/code/cli/munki/.build/release/munkiimport",
+            "preLaunchTask": "swift: Build Release munkiimport (code/cli/munki)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:munki}/code/cli/munki",
+            "name": "Debug repoclean (code/cli/munki)",
+            "program": "${workspaceFolder:munki}/code/cli/munki/.build/debug/repoclean",
+            "preLaunchTask": "swift: Build Debug repoclean (code/cli/munki)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:munki}/code/cli/munki",
+            "name": "Release repoclean (code/cli/munki)",
+            "program": "${workspaceFolder:munki}/code/cli/munki/.build/release/repoclean",
+            "preLaunchTask": "swift: Build Release repoclean (code/cli/munki)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:munki}/code/cli/munki",
+            "name": "Debug yaml_migrate (code/cli/munki)",
+            "program": "${workspaceFolder:munki}/code/cli/munki/.build/debug/yaml_migrate",
+            "preLaunchTask": "swift: Build Debug yaml_migrate (code/cli/munki)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:munki}/code/cli/munki",
+            "name": "Release yaml_migrate (code/cli/munki)",
+            "program": "${workspaceFolder:munki}/code/cli/munki/.build/release/yaml_migrate",
+            "preLaunchTask": "swift: Build Release yaml_migrate (code/cli/munki)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:munki}/code/cli/munki",
+            "name": "Debug yaml_to_plist (code/cli/munki)",
+            "program": "${workspaceFolder:munki}/code/cli/munki/.build/debug/yaml_to_plist",
+            "preLaunchTask": "swift: Build Debug yaml_to_plist (code/cli/munki)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:munki}/code/cli/munki",
+            "name": "Release yaml_to_plist (code/cli/munki)",
+            "program": "${workspaceFolder:munki}/code/cli/munki/.build/release/yaml_to_plist",
+            "preLaunchTask": "swift: Build Release yaml_to_plist (code/cli/munki)"
+        }
+    ]
+}
