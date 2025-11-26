@@ -272,4 +272,3 @@ To fetch updates from upstream and merge them into our internal fork:
 *   **2025-11-25**: Merged `rodchristiansen/munki:main` (YAML support update).
     *   **Status**: Conflicts resolved.
     *   **Notes**: `logouthelper` (Python) was deleted in favor of Swift version. `munkiimport` customizations were preserved (or re-applied). Legacy files (`MPKconvert.swift`, `MPKcreate.swift`, `YAML_SUPPORT.md`) were cleaned up.
-`````
