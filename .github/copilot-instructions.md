@@ -231,6 +231,15 @@ Our `munkiimport` tool has been enhanced with internal logic:
 *   **Filename Sanitization**: Enforces naming conventions (e.g., adding `-Apple` or `-Intel` suffixes).
 *   **File**: `code/cli/munki/munkiimport/munkiimport.swift`
 
+### 5. Recurring Version Conflicts
+These files often conflict due to version number differences (Upstream uses semantic versioning e.g. `7.0.x`, we use date-based e.g. `2025.10.13`).
+*   **Files**:
+    *   `code/apps/Managed Software Center/Managed Software Center/Info.plist`
+    *   `code/apps/MunkiStatus/MunkiStatus/Info.plist`
+    *   `code/cli/munki/shared/version.swift`
+*   **Resolution**: Always keep **OUR** versions (HEAD).
+
+
 ## Sync Instructions
 
 To fetch updates from upstream and merge them into our internal fork:
@@ -257,6 +266,7 @@ To fetch updates from upstream and merge them into our internal fork:
 
 5.  **Resolve Conflicts**:
     *   **Branding/Launchd**: Always keep **OUR** versions (HEAD).
+    *   **Version Files**: Always keep **OUR** versions (HEAD) for `Info.plist` files and `version.swift`.
     *   **Code**: Generally accept **THEIR** (upstream) versions, but **BE CAREFUL** with `munkiimport.swift`. You must manually re-apply our Git integration and sanitization logic if it gets overwritten.
     *   **Deleted Files**: If upstream deleted a file (like `Package.swift`), allow the deletion unless we specifically need it.
 
