@@ -7,6 +7,7 @@
 
 import ArgumentParser
 import Foundation
+import MunkiShared
 
 ///  Returns sizes in human-readable units.
 func humanReadable(_ sizeInBytes: Int) -> String {

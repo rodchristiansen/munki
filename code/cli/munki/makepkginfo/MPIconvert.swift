@@ -1,6 +1,6 @@
 //
-//  MUconvert.swift
-//  manifestutil
+//  MPIconvert.swift
+//  makepkginfo
 //
 //  Created by Rod Christiansen on 10/5/25.
 //
@@ -21,45 +21,44 @@
 import ArgumentParser
 import Foundation
 
-/// Convert manifest files between YAML and plist formats
-extension ManifestUtil {
-    struct Convert: AsyncParsableCommand {
-        static var configuration = CommandConfiguration(
-            abstract: "Convert manifest files between YAML and plist formats.",
+extension MakePkgInfo {
+    struct Convert: ParsableCommand {
+        static let configuration = CommandConfiguration(
+            abstract: "Convert pkginfo files between YAML and plist formats.",
             discussion: """
-            Converts manifest files from plist to YAML or from YAML to plist.
+            Converts pkginfo files from plist to YAML or from YAML to plist.
             
             If converting a single file, specify both input and output paths.
             If converting a directory, specify the directory path and use --to-yaml or --to-plist.
             
             Examples:
-              # Convert single manifest from plist to YAML
-              manifestutil convert site_default.plist site_default.yaml
+              # Convert single pkginfo from plist to YAML
+              makepkginfo convert Firefox-123.0.plist Firefox-123.0.yaml
               
-              # Convert single manifest from YAML to plist
-              manifestutil convert site_default.yaml site_default.plist
+              # Convert single pkginfo from YAML to plist
+              makepkginfo convert Firefox-123.0.yaml Firefox-123.0.plist
               
-              # Convert all manifests in repo to YAML
-              manifestutil convert --to-yaml --backup
+              # Convert all pkgsinfo files in a directory to YAML
+              makepkginfo convert /path/to/pkgsinfo --to-yaml --backup
               
-              # Convert all manifests in repo to plist (for compatibility)
-              manifestutil convert --to-plist --backup
+              # Convert all pkgsinfo files in a directory to plist
+              makepkginfo convert /path/to/pkgsinfo --to-plist --backup
               
               # Dry run to see what would be converted
-              manifestutil convert --to-yaml --dry-run
+              makepkginfo convert /path/to/pkgsinfo --to-yaml --dry-run
             """
         )
         
-        @Argument(help: "Source file or directory (optional if using repo connection)")
+        @Argument(help: "Source file or directory path")
         var source: String?
         
-        @Argument(help: "Destination file (required when converting single file)")
+        @Argument(help: "Destination file path (required when converting single file)")
         var destination: String?
         
-        @Flag(name: .long, help: "Convert all manifests in repo to YAML format")
+        @Flag(name: .long, help: "Convert all pkgsinfo files to YAML format")
         var toYaml = false
         
-        @Flag(name: .long, help: "Convert all manifests in repo to plist format")
+        @Flag(name: .long, help: "Convert all pkgsinfo files to plist format")
         var toPlist = false
         
         @Flag(name: .long, help: "Create backup copies of original files")
@@ -68,7 +67,7 @@ extension ManifestUtil {
         @Flag(name: .long, help: "Show what would be done without making changes")
         var dryRun = false
         
-        @Flag(name: .shortAndLong, help: "Verbose output")
+        @Flag(name: [.short, .long], help: "Verbose output")
         var verbose = false
         
         @Flag(name: .long, help: "Force overwrite existing files")
@@ -92,13 +91,13 @@ extension ManifestUtil {
             }
         }
         
-        func run() async throws {
+        mutating func run() throws {
             if let src = source, let dest = destination {
                 // Single file conversion
                 try convertSingleFile(from: src, to: dest)
-            } else if toYaml || toPlist {
-                // Batch conversion using repo connection
-                try await convertRepoManifests(toYaml: toYaml)
+            } else if let src = source, (toYaml || toPlist) {
+                // Batch directory conversion
+                try convertDirectory(src, toYaml: toYaml)
             } else {
                 throw ValidationError("Please specify either source/destination files or use --to-yaml/--to-plist for batch conversion")
             }
@@ -133,10 +132,10 @@ extension ManifestUtil {
                 let isSourceYaml = isYamlFile(source)
                 
                 // Parse the source file
-                let manifest = try readData(sourceData, preferYaml: isSourceYaml, filepath: source)
+                let pkginfo = try readData(sourceData, preferYaml: isSourceYaml, filepath: source)
                 
-                guard let manifestDict = manifest as? PlistDict else {
-                    throw ValidationError("Could not parse manifest from \(source)")
+                guard let pkginfoDict = pkginfo as? PlistDict else {
+                    throw ValidationError("Could not parse pkginfo from \(source)")
                 }
                 
                 // Determine output format based on destination extension
@@ -145,9 +144,9 @@ extension ManifestUtil {
                 // Convert to destination format
                 let destData: Data
                 if isDestYaml {
-                    destData = try yamlToData(manifestDict)
+                    destData = try yamlToData(pkginfoDict)
                 } else {
-                    destData = try plistToData(manifestDict)
+                    destData = try plistToData(pkginfoDict)
                 }
                 
                 // Write to destination
@@ -162,30 +161,59 @@ extension ManifestUtil {
             }
         }
         
-        private func convertRepoManifests(toYaml: Bool) async throws {
-            guard let repo = RepoConnection.shared.repo else {
-                throw ValidationError("No repo connection. Run 'manifestutil config' first.")
+        private func convertDirectory(_ directoryPath: String, toYaml: Bool) throws {
+            let directoryURL = URL(fileURLWithPath: directoryPath)
+            
+            guard FileManager.default.fileExists(atPath: directoryPath) else {
+                throw ValidationError("Directory does not exist: \(directoryPath)")
+            }
+            
+            var isDirectory: ObjCBool = false
+            guard FileManager.default.fileExists(atPath: directoryPath, isDirectory: &isDirectory),
+                  isDirectory.boolValue else {
+                throw ValidationError("Path is not a directory: \(directoryPath)")
             }
             
             let targetFormat = toYaml ? "YAML" : "plist"
             
             if verbose {
-                print("Converting all manifests to \(targetFormat) format...")
+                print("Converting all pkginfo files in \(directoryPath) to \(targetFormat) format...")
                 print("Backup: \(backup ? "enabled" : "disabled")")
                 print("Dry run: \(dryRun ? "enabled" : "disabled")")
             }
             
             var stats = ConversionStats()
             
-            // Get list of all manifests from repo using getManifestNames function
-            guard let manifestNames = await getManifestNames(repo: repo) else {
-                throw ValidationError("Could not retrieve manifest list from repo")
+            // Get all files in directory (non-recursive for now)
+            let fileManager = FileManager.default
+            guard let enumerator = fileManager.enumerator(at: directoryURL,
+                                                          includingPropertiesForKeys: [.isRegularFileKey],
+                                                          options: [.skipsHiddenFiles]) else {
+                throw ValidationError("Could not enumerate directory: \(directoryPath)")
             }
             
-            for manifestName in manifestNames {
-                try await convertRepoManifest(
-                    manifestName,
-                    repo: repo,
+            for case let fileURL as URL in enumerator {
+                let relativePath = fileURL.path.replacingOccurrences(of: directoryURL.path + "/", with: "")
+                
+                // Check if it's a regular file
+                let resourceValues = try fileURL.resourceValues(forKeys: [.isRegularFileKey])
+                guard resourceValues.isRegularFile == true else {
+                    continue
+                }
+                
+                // Check if it's a pkginfo file (plist or yaml)
+                let filename = fileURL.lastPathComponent
+                let isPlist = filename.hasSuffix(".plist")
+                let isYaml = filename.hasSuffix(".yaml") || filename.hasSuffix(".yml")
+                
+                // Skip if not a pkginfo file
+                guard isPlist || isYaml else {
+                    continue
+                }
+                
+                try convertDirectoryFile(
+                    fileURL: fileURL,
+                    relativePath: relativePath,
                     toYaml: toYaml,
                     stats: &stats
                 )
@@ -202,30 +230,26 @@ extension ManifestUtil {
             }
         }
         
-        private func convertRepoManifest(
-            _ manifestName: String,
-            repo: Repo,
+        private func convertDirectoryFile(
+            fileURL: URL,
+            relativePath: String,
             toYaml: Bool,
             stats: inout ConversionStats
-        ) async throws {
-            // Determine the new extension based on conversion direction
-            let fileExtension = toYaml ? ".yaml" : ""
-            
-            // Check if manifest is already in the target format
-            let identifier = "manifests/\(manifestName)"
-            let hasYamlExt = manifestName.hasSuffix(".yaml") || manifestName.hasSuffix(".yml")
+        ) throws {
+            let filename = fileURL.lastPathComponent
+            let hasYamlExt = filename.hasSuffix(".yaml") || filename.hasSuffix(".yml")
             
             // Skip if already in target format
             if toYaml && hasYamlExt {
                 if verbose {
-                    print("Skipping (already YAML): \(manifestName)")
+                    print("Skipping (already YAML): \(relativePath)")
                 }
                 stats.skipped += 1
                 return
             }
             if !toYaml && !hasYamlExt {
                 if verbose {
-                    print("Skipping (already plist): \(manifestName)")
+                    print("Skipping (already plist): \(relativePath)")
                 }
                 stats.skipped += 1
                 return
@@ -233,7 +257,7 @@ extension ManifestUtil {
             
             if verbose {
                 let targetFormat = toYaml ? "YAML" : "plist"
-                print("Converting \(manifestName) to \(targetFormat)...")
+                print("Converting \(relativePath) to \(targetFormat)...")
             }
             
             if dryRun {
@@ -242,10 +266,13 @@ extension ManifestUtil {
             }
             
             do {
-                // Read the manifest using getManifest helper function
-                guard let manifest = await getManifest(repo: repo, name: manifestName) else {
+                // Read the pkginfo file
+                let sourceData = try Data(contentsOf: fileURL)
+                let pkginfo = try readData(sourceData, preferYaml: hasYamlExt, filepath: fileURL.path)
+                
+                guard let pkginfoDict = pkginfo as? PlistDict else {
                     if verbose {
-                        print("Error: Could not read manifest: \(manifestName)")
+                        print("Error: Could not parse pkginfo: \(relativePath)")
                     }
                     stats.errors += 1
                     return
@@ -253,48 +280,56 @@ extension ManifestUtil {
                 
                 // Create backup if requested
                 if backup {
-                    let backupName = "\(manifestName).backup"
-                    let originalData = try await repo.get(identifier)
-                    try await repo.put("manifests/\(backupName)", content: originalData)
-                    if verbose {
-                        print("Created backup: \(backupName)")
-                    }
-                }
-                
-                // Determine new manifest name (strip .yaml/.yml extension or add .yaml)
-                let baseName: String
-                if hasYamlExt {
-                    baseName = (manifestName as NSString).deletingPathExtension
-                } else {
-                    baseName = manifestName
-                }
-                let newName = "\(baseName)\(fileExtension)"
-                
-                // Save manifest in new format using saveManifest helper
-                if await saveManifest(repo: repo, manifest: manifest, name: newName, overwrite: true, yamlOutput: toYaml) {
-                    // Delete old file if name changed
-                    if manifestName != newName {
-                        do {
-                            try await repo.delete(identifier)
-                            if verbose {
-                                print("Deleted original: \(manifestName)")
-                            }
-                        } catch {
-                            if verbose {
-                                print("Warning: Could not delete original \(manifestName): \(error)")
-                            }
+                    let backupURL = fileURL.appendingPathExtension("backup")
+                    if !FileManager.default.fileExists(atPath: backupURL.path) {
+                        try FileManager.default.copyItem(at: fileURL, to: backupURL)
+                        if verbose {
+                            print("Created backup: \(backupURL.lastPathComponent)")
                         }
                     }
-                    stats.converted += 1
-                } else {
-                    if verbose {
-                        print("Error: Could not save converted manifest: \(newName)")
-                    }
-                    stats.errors += 1
                 }
+                
+                // Determine new filename (strip .yaml/.yml extension or add .yaml)
+                let baseName: String
+                if hasYamlExt {
+                    baseName = (filename as NSString).deletingPathExtension
+                } else {
+                    // Remove .plist extension if present
+                    baseName = filename.hasSuffix(".plist") ? (filename as NSString).deletingPathExtension : filename
+                }
+                let fileExtension = toYaml ? ".yaml" : ".plist"
+                let newFilename = "\(baseName)\(fileExtension)"
+                let newURL = fileURL.deletingLastPathComponent().appendingPathComponent(newFilename)
+                
+                // Convert to destination format
+                let destData: Data
+                if toYaml {
+                    destData = try yamlToData(pkginfoDict)
+                } else {
+                    destData = try plistToData(pkginfoDict)
+                }
+                
+                // Write new file
+                try destData.write(to: newURL)
+                
+                // Delete old file if name changed
+                if filename != newFilename {
+                    do {
+                        try FileManager.default.removeItem(at: fileURL)
+                        if verbose {
+                            print("Deleted original: \(filename)")
+                        }
+                    } catch {
+                        if verbose {
+                            print("Warning: Could not delete original \(filename): \(error)")
+                        }
+                    }
+                }
+                
+                stats.converted += 1
             } catch {
                 if verbose {
-                    print("Error converting \(manifestName): \(error)")
+                    print("Error converting \(relativePath): \(error)")
                 }
                 stats.errors += 1
             }

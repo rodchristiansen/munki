@@ -161,7 +161,7 @@ func makeCatalogDB(_ repo: Repo) async throws -> CatalogDatabase {
     }
 
     do {
-                catalogItems = try readData(allCatalog) as? [PlistDict] ?? [PlistDict]()
+        catalogItems = try readData(allCatalog) as? [PlistDict] ?? [PlistDict]()
     } catch let PlistError.readError(description) {
         throw CatalogError.decodeError(
             description: "Could not decode data from catalogs/all: \(description)")
@@ -651,7 +651,7 @@ func promptForSubdirectory(_ repo: Repo, _ subdirectory: String?) async -> Strin
             if existingSubdirs.contains(selectedDir) {
                 return selectedDir
             } else {
-                print("Path pkgsinfo/\(selectedDir) does not exist. Create it? [y/N] ", terminator: "")
+                print("pkgsinfo/\(selectedDir) does not exist or is empty. Use this directory? [y/N] ", terminator: "")
                 if let answer = readLine(),
                    answer.lowercased().hasPrefix("y")
                 {
