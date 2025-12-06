@@ -2,6 +2,10 @@
 
 **Purpose:** This document tracks all customizations made to `munkiimport.swift` in our fork that differ from the official [munki/munki](https://github.com/munki/munki) upstream repository. Use this when merging upstream changes to preserve our custom features.
 
+**Location**: `code/cli/munki/munkiimport/`
+
+---
+
 ## Repository Comparison
 - **Our Fork:** https://github.com/rodchristiansen/munki/blob/main/code/cli/munki/munkiimport/munkiimport.swift
 - **Official Upstream:** https://github.com/munki/munki/blob/Munki7dev/code/cli/munki/munkiimport/munkiimport.swift
@@ -9,7 +13,7 @@
 
 ---
 
-## 🎯 TL;DR - What Makes Our Fork Different
+## Summary - What Makes Our Fork Different
 
 We have **10 custom features** (+305 lines) not in official upstream:
 
@@ -44,71 +48,71 @@ We have **10 custom features** (+305 lines) not in official upstream:
 ### All Features (10 Total)
 
 #### Core Features (4)
-1. ✅ **Git pull automation** with rebase fallback
-2. ✅ **Silent makecatalogs** before import  
-3. ✅ **Filename sanitization** with architecture suffixes (-Apple/-Intel)
-4. ✅ **Read-only filesystem** handling
+1. **Git pull automation** with rebase fallback
+2. **Silent makecatalogs** before import  
+3. **Filename sanitization** with architecture suffixes (-Apple/-Intel)
+4. **Read-only filesystem** handling
 
 #### Extended Features (6)
-5. ✅ **Script field copying** (pre/post install/uninstall scripts)
-6. ✅ **forced_install/forced_uninstall** copying
-7. ✅ **installs/items_to_copy** array path handling
-8. ✅ **Interactive architecture** editing (comma-separated)
-9. ✅ **Catalogs display** in matching items
-10. ✅ **Full absolute path** display for saved pkginfo
+5. **Script field copying** (pre/post install/uninstall scripts)
+6. **forced_install/forced_uninstall** copying
+7. **installs/items_to_copy** array path handling
+8. **Interactive architecture** editing (comma-separated)
+9. **Catalogs display** in matching items
+10. **Full absolute path** display for saved pkginfo
 
 ### Visual Feature Map
 
 ```
 munkiimport (Swift)
-├── 🔄 Git Operations
-│   ├── Repository detection
-│   ├── Auto pull before import
-│   └── Smart conflict resolution
-│       └── Rebase with autostash fallback
-│
-├── 📦 Package Processing
-│   ├── Filename sanitization
-│   │   ├── Remove spaces
-│   │   ├── Add version
-│   │   └── Add architecture suffix
-│   │       ├── arm64 → -Apple
-│   │       └── x86_64 → -Intel
-│   └── Read-only filesystem handling
-│
-├── 📋 Template Matching
-│   ├── Standard field copying
-│   ├── Script field copying
-│   │   ├── preinstall_script
-│   │   ├── postinstall_script
-│   │   ├── installcheck_script
-│   │   ├── uninstallcheck_script
-│   │   ├── postuninstall_script
-│   │   └── uninstall_script
-│   ├── forced_install/uninstall
-│   ├── installs array paths
-│   └── items_to_copy paths
-│
-├── 🖥️  Interactive Editing
-│   ├── Standard fields
-│   ├── Architecture editing
-│   │   └── Comma-separated: "x86_64, arm64"
-│   └── Catalogs editing
-│
-├── 📊 Information Display
-│   ├── Matching item details
-│   ├── Catalogs display
-│   └── Full absolute paths
-│
-└── 🔨 Catalog Management
-    └── Silent makecatalogs refresh
+|-- Git Operations
+|   |-- Repository detection
+|   |-- Auto pull before import
+|   +-- Smart conflict resolution
+|       +-- Rebase with autostash fallback
+|
+|-- Package Processing
+|   |-- Filename sanitization
+|   |   |-- Remove spaces
+|   |   |-- Add version
+|   |   +-- Add architecture suffix
+|   |       |-- arm64 -> -Apple
+|   |       +-- x86_64 -> -Intel
+|   +-- Read-only filesystem handling
+|
+|-- Template Matching
+|   |-- Standard field copying
+|   |-- Script field copying
+|   |   |-- preinstall_script
+|   |   |-- postinstall_script
+|   |   |-- installcheck_script
+|   |   |-- uninstallcheck_script
+|   |   |-- postuninstall_script
+|   |   +-- uninstall_script
+|   |-- forced_install/uninstall
+|   |-- installs array paths
+|   +-- items_to_copy paths
+|
+|--   Interactive Editing
+|   |-- Standard fields
+|   |-- Architecture editing
+|   |   +-- Comma-separated: "x86_64, arm64"
+|   +-- Catalogs editing
+|
+|--  Information Display
+|   |-- Matching item details
+|   |-- Catalogs display
+|   +-- Full absolute paths
+|
++--  Catalog Management
+    +-- Silent makecatalogs refresh
 ```
 
 ---
 
 ## Feature Details
 
-### 1. Git Pull Automation with Smart Conflict Handling ✅✅
+### 1. Git Pull Automation with Smart Conflict Handling 
 
 **Status:** Fully implemented  
 **Python Location:** Lines 67-130  
@@ -188,7 +192,7 @@ if let fileRepo = repo as? FileRepo {
 
 ---
 
-### 2. Silent Makecatalogs Refresh ✅✅
+### 2. Silent Makecatalogs Refresh 
 
 **Status:** Fully implemented  
 **Python Location:** Lines 458-463  
@@ -232,7 +236,7 @@ do {
 
 ---
 
-### 3. Filename Sanitization with Architecture Suffixes ✅✅
+### 3. Filename Sanitization with Architecture Suffixes 
 
 **Status:** Fully implemented  
 **Python Location:** Lines 681-716  
@@ -242,9 +246,9 @@ do {
 - Removes spaces from package names
 - Adds version to filename if not present
 - Adds architecture suffix based on `supported_architectures`:
-  - `['arm64']` → adds "-Apple"
-  - `['x86_64']` → adds "-Intel"
-  - Multiple or other architectures → no suffix
+  - `['arm64']` -> adds "-Apple"
+  - `['x86_64']` -> adds "-Intel"
+  - Multiple or other architectures -> no suffix
 - Preserves original file extension (.pkg, .dmg, etc.)
 
 #### Examples
@@ -324,7 +328,7 @@ func sanitizeInstallerFilename(originalPath: String, pkginfo: PlistDict) -> Stri
 
 ---
 
-### 4. Read-only Filesystem Handling ✅✅
+### 4. Read-only Filesystem Handling 
 
 **Status:** Fully implemented  
 **Python Location:** Lines 684-708  
@@ -379,7 +383,7 @@ func renameInstallerItem(from sourcePath: String, to destinationPath: String) ->
 
 ---
 
-### 5. Extended Template Field Copying ✅✅
+### 5. Extended Template Field Copying 
 
 **Status:** Fully implemented  
 **Python Location:** Lines 593-639  
@@ -474,7 +478,7 @@ for key in extendedFields {
 
 ---
 
-### 6. Array Path Handling for installs and items_to_copy ✅✅
+### 6. Array Path Handling for installs and items_to_copy 
 
 **Status:** Fully implemented  
 **Python Location:** Lines 625-639  
@@ -544,7 +548,7 @@ if let matchingItems = matchingPkginfo["items_to_copy"] as? [[String: Any]],
 
 ---
 
-### 7. Interactive Architecture Editing ✅✅
+### 7. Interactive Architecture Editing 
 
 **Status:** Fully implemented  
 **Python Location:** Lines 658-665  
@@ -626,20 +630,20 @@ for (fieldName, key) in editFields {
 **User Experience:**
 ```
 Architecture(s) [x86_64, arm64]: arm64
-[Result: ["arm64"] → filename gets "-Apple" suffix]
+[Result: ["arm64"] -> filename gets "-Apple" suffix]
 
 Architecture(s) [x86_64, arm64]: x86_64
-[Result: ["x86_64"] → filename gets "-Intel" suffix]
+[Result: ["x86_64"] -> filename gets "-Intel" suffix]
 
 Architecture(s) [x86_64, arm64]: <press Enter>
-[Result: ["x86_64", "arm64"] → no suffix]
+[Result: ["x86_64", "arm64"] -> no suffix]
 ```
 
 **Integration Point:** Part of interactive editing loop
 
 ---
 
-### 8. Catalogs Display in Matching Items ✅✅
+### 8. Catalogs Display in Matching Items 
 
 **Status:** Fully implemented  
 **Python Location:** Lines 560-563  
@@ -704,7 +708,7 @@ Installer item path: apps/Firefox-120.0-Intel.pkg
 
 ---
 
-### 9. Full Repo Path Display ✅✅
+### 9. Full Repo Path Display 
 
 **Status:** Fully implemented  
 **Python Location:** Lines 406-417, 778-786  
@@ -767,7 +771,7 @@ Remote Repo:
 
 ---
 
-### 10. Silent Makecatalogs After Import ✅✅
+### 10. Silent Makecatalogs After Import 
 
 **Status:** Fully implemented  
 **Python Location:** Throughout  
@@ -836,22 +840,22 @@ Leverages existing Swift `CatalogsMaker` struct:
 
 | Feature | Python | Swift | Status |
 |---------|--------|-------|--------|
-| Git repository detection | ✅ | ✅ | Identical |
-| Git pull execution | ✅ | ✅ | Identical |
-| Git pull rebase fallback | ✅ | ✅ | **Enhanced in Swift** |
-| Silent makecatalogs | ✅ | ✅ | Identical |
-| Filename sanitization | ✅ | ✅ | Identical |
-| Architecture suffixes | ✅ | ✅ | Identical |
-| Read-only handling | ✅ | ✅ | Identical |
-| Script field copying | ✅ | ✅ | Identical |
-| forced_install/uninstall | ✅ | ✅ | Identical |
-| installs array handling | ✅ | ✅ | Identical |
-| items_to_copy handling | ✅ | ✅ | Identical |
-| Architecture editing | ✅ | ✅ | Identical |
-| Catalogs display | ✅ | ✅ | Identical |
-| Full path display | ✅ | ✅ | Identical |
+| Git repository detection |  |  | Identical |
+| Git pull execution |  |  | Identical |
+| Git pull rebase fallback |  |  | **Enhanced in Swift** |
+| Silent makecatalogs |  |  | Identical |
+| Filename sanitization |  |  | Identical |
+| Architecture suffixes |  |  | Identical |
+| Read-only handling |  |  | Identical |
+| Script field copying |  |  | Identical |
+| forced_install/uninstall |  |  | Identical |
+| installs array handling |  |  | Identical |
+| items_to_copy handling |  |  | Identical |
+| Architecture editing |  |  | Identical |
+| Catalogs display |  |  | Identical |
+| Full path display |  |  | Identical |
 
-**Result:** 100% feature parity achieved! ✅
+**Result:** 100% feature parity achieved! 
 
 ### Key Improvements Over Python
 
@@ -935,8 +939,8 @@ cd /Users/rod/Developer/munki/code
 **Purpose:** Verify spaces removed, version/arch added
 ```bash
 # Test packages with various names:
-# - "Google Chrome.pkg" → should become "GoogleChrome-VERSION-Intel.pkg"
-# - "Final Cut Pro.app" → should become "FinalCutPro-VERSION-Apple.app"
+# - "Google Chrome.pkg" -> should become "GoogleChrome-VERSION-Intel.pkg"
+# - "Final Cut Pro.app" -> should become "FinalCutPro-VERSION-Apple.app"
 # - Package with version already in name
 
 ./build/binaries/munkiimport "/path/to/Google Chrome.pkg"
@@ -1095,26 +1099,26 @@ sudo cp /Users/rod/Developer/munki/code/build/binaries/munkiimport \
 
 | Metric | Value |
 |--------|-------|
-| **Features Ported** | 10 / 10 ✅ |
+| **Features Ported** | 10 / 10  |
 | **Code Lines Added** | +305 lines |
 | **Code Lines Removed** | -7 lines |
 | **New Functions** | 5 |
 | **Enhanced Sections** | 7 |
 | **Python Version** | 810 lines |
 | **Swift Version** | 750 lines |
-| **Feature Parity** | 100% ✅ |
+| **Feature Parity** | 100%  |
 
 ### Feature Breakdown
 
 | Category | Count | Status |
 |----------|-------|--------|
-| **Core Functions Added** | 5 | ✅ Complete |
-| **Helper Functions** | 3 | ✅ Complete |
-| **Enhanced Functions** | 2 | ✅ Complete |
-| **Template Fields** | 20 | ✅ Complete |
-| **Array Handlers** | 2 | ✅ Complete |
-| **Interactive Fields** | 9 | ✅ Complete |
-| **Display Fields** | 6 | ✅ Complete |
+| **Core Functions Added** | 5 |  Complete |
+| **Helper Functions** | 3 |  Complete |
+| **Enhanced Functions** | 2 |  Complete |
+| **Template Fields** | 20 |  Complete |
+| **Array Handlers** | 2 |  Complete |
+| **Interactive Fields** | 9 |  Complete |
+| **Display Fields** | 6 |  Complete |
 
 ---
 
@@ -1370,14 +1374,14 @@ git diff --stat upstream/Munki7dev..HEAD -- code/cli/munki/munkiimport/munkiimpo
 
 ## Conclusion
 
-### Success Metrics ✅
+### Success Metrics 
 
-- ✅ **All Python features** → Swift  
-- ✅ **No regressions** in functionality  
-- ✅ **Enhanced reliability** with better error handling  
-- ✅ **Improved UX** with better displays  
-- ✅ **Comprehensive documentation** for future maintenance  
-- ✅ **Backward compatible** with existing workflows  
+-  **All Python features** -> Swift  
+-  **No regressions** in functionality  
+-  **Enhanced reliability** with better error handling  
+-  **Improved UX** with better displays  
+-  **Comprehensive documentation** for future maintenance  
+-  **Backward compatible** with existing workflows  
 
 ### Key Benefits
 
@@ -1408,6 +1412,6 @@ Starting from the initial request to port "customizations from the Python versio
 **Implementation Date:** October 2, 2025  
 **Implementation Time:** ~2 hours  
 **Lines Modified:** +305, -7  
-**Features Ported:** 10/10 ✅  
-**Feature Parity:** 100% ✅  
+**Features Ported:** 10/10   
+**Feature Parity:** 100%   
 **Status:** Ready for testing and deployment! 🚀
