@@ -6,7 +6,19 @@
 **Branch**: add-yaml-support  
 **Goal**: Build and install YAML-capable Munki admin tools to replace Python-based tools that only support plist format  
 **User**: Rod Christiansen  
-**Current Date**: August 31, 2025  
+**Last Updated**: December 5, 2025
+
+## Fork Customization Documentation
+
+All fork customizations are documented alongside the customized code:
+
+| Category | Documentation |
+|----------|---------------|
+| **Master Index** | [`CUSTOMIZATIONS.md`](../CUSTOMIZATIONS.md) |
+| **munkiimport** | [`code/cli/munki/munkiimport/customizations.md`](../code/cli/munki/munkiimport/customizations.md) |
+| **Branding** | [`code/apps/Managed Software Center/customizations.md`](../code/apps/Managed%20Software%20Center/customizations.md) |
+| **Launchd** | [`launchd/customizations.md`](../launchd/customizations.md) |
+| **Build System** | [`code/tools/customizations.md`](../code/tools/customizations.md) |  
 
 ## Problem Statement
 - User has YAML pkgsinfo files that can't be processed by standard Munki 6.x/7.x
