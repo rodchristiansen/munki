@@ -212,6 +212,35 @@ echo ""
 echo -e "${BLUE}Building Munki package...${NC}"
 echo ""
 
+# Generate dynamic version string (YYYY.MM.DD.HHMM format)
+BUILD_VERSION=$(date +"%Y.%m.%d.%H%M")
+VERSION_FILE="$SCRIPT_DIR/code/cli/munki/shared/version.swift"
+
+echo -e "${BLUE}Setting build version...${NC}"
+echo -e "  Version: ${GREEN}$BUILD_VERSION${NC}"
+
+# Replace placeholder in version.swift
+if grep -q "__BUILD_VERSION__" "$VERSION_FILE"; then
+    sed -i '' "s/__BUILD_VERSION__/$BUILD_VERSION/g" "$VERSION_FILE"
+    echo -e "${GREEN}✓${NC} Version injected into version.swift"
+    VERSION_INJECTED=true
+else
+    echo -e "${YELLOW}⚠${NC} Version placeholder not found (already set or modified)"
+    VERSION_INJECTED=false
+fi
+echo ""
+
+# Function to restore version placeholder
+restore_version() {
+    if [ "$VERSION_INJECTED" = true ]; then
+        sed -i '' "s/$BUILD_VERSION/__BUILD_VERSION__/g" "$VERSION_FILE"
+        echo -e "${GREEN}✓${NC} Version placeholder restored"
+    fi
+}
+
+# Trap to restore version on exit (success or failure)
+trap restore_version EXIT
+
 # Run the build
 LOG_FILE="/tmp/munki_build_$(date +%Y%m%d_%H%M%S).log"
 if bash code/tools/make_swift_munki_pkg.sh $BUILD_OPTS 2>&1 | tee "$LOG_FILE"; then
