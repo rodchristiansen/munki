@@ -217,8 +217,14 @@ if [ $APPSSVNREV -gt $MPKGSVNREV ] ; then
 fi
 # get base apps version from MSC.app
 APPSVERSION=$(defaults read "$MUNKIROOT/code/apps/Managed Software Center/Managed Software Center/Info" CFBundleShortVersionString)
-# append the APPSSVNREV
-APPSVERSION=$APPSVERSION.$APPSSVNREV
+# Use same logic as VERSION - date-based versions don't get revision suffix
+if [[ "$MUNKIVERS" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}\.[0-9]{4}$ ]]; then
+    # Use the date-based version for apps too
+    APPSVERSION=$MUNKIVERS
+else
+    # append the APPSSVNREV for traditional versioning
+    APPSVERSION=$APPSSVNREV.$APPSSVNREV
+fi
 
 # get a pseudo-svn revision number for the launchd pkg
 LAUNCHDGITREV=$(git log -n1 --format="%H" -- launchd/LaunchDaemons launchd/LaunchAgents)
