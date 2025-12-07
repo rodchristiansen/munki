@@ -237,7 +237,8 @@ This document tracks the differences between our internal fork (`emilycarru-its-
 We maintain custom branding assets for Managed Software Center.
 *   **Files**:
     *   `code/apps/Managed Software Center/AppIcon.icon/` (Custom icons)
-    *   `code/apps/Managed Software Center/*/InfoPlist.strings` (Localized strings)
+    *   `code/apps/Managed Software Center/*/InfoPlist.strings` (Localized strings - ALL locales)
+    *   `code/apps/Managed Software Center/Managed Software Center.xcodeproj/project.pbxproj` (Xcode project)
 
 ### 2. Launchd Configuration
 We have customized launchd property lists for our environment.
@@ -293,8 +294,11 @@ To fetch updates from upstream and merge them into our internal fork:
 
 5.  **Resolve Conflicts**:
     *   **Branding/Launchd**: Always keep **OUR** versions (HEAD).
+    *   **InfoPlist.strings**: Keep **OUR** versions for ALL locales (ar, de, en, es, fr, it, ja, ko, nl, pt_BR, pt, ru, sv, zh_CN).
+    *   **project.pbxproj**: Keep **OUR** version for `Managed Software Center.xcodeproj/project.pbxproj`.
     *   **Version Files**: Always keep **OUR** versions (HEAD) for `Info.plist` files and `version.swift`.
-    *   **Code**: Generally accept **THEIR** (upstream) versions, but **BE CAREFUL** with `munkiimport.swift`. You must manually re-apply our Git integration and sanitization logic if it gets overwritten.
+    *   **Documentation**: Keep **OUR** versions of `CUSTOMIZATIONS.md` and `.github/copilot-instructions.md`.
+    *   **Code**: Generally accept **THEIR** (upstream) versions for `code/cli/*` and `code/tools/*`, but **BE CAREFUL** with `munkiimport.swift`. You must manually re-apply our Git integration and sanitization logic if it gets overwritten.
     *   **Deleted Files**: If upstream deleted a file (like `Package.swift`), allow the deletion unless we specifically need it.
 
 6.  **Verify Customizations**:
@@ -305,6 +309,11 @@ To fetch updates from upstream and merge them into our internal fork:
     Push the branch to `emilycarru` and create a Pull Request for review.
 
 ## Recent Sync History
+
+*   **2025-06-26**: Merged `rodchristiansen/munki:main`.
+    *   **Status**: Conflicts resolved.
+    *   **Files kept OURS**: CUSTOMIZATIONS.md, all branding*.jpg, all */InfoPlist.strings (14 locales), project.pbxproj, all launchd plists.
+    *   **Files accepted THEIRS**: code/cli/* (Swift CLI tools), code/tools/*, build.sh, YAML_PR.md (new file).
 
 *   **2025-11-25**: Merged `rodchristiansen/munki:main` (YAML support update).
     *   **Status**: Conflicts resolved.
