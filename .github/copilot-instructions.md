@@ -274,47 +274,93 @@ To fetch updates from upstream and merge them into our internal fork:
 
 1.  **Add Upstream Remote** (if not already added):
     ```bash
-    git remote add origin https://github.com/rodchristiansen/munki.git
+    git remote add upstream https://github.com/rodchristiansen/munki.git
     ```
 
 2.  **Fetch Latest Changes**:
     ```bash
-    git fetch origin
+    git fetch upstream
     ```
 
-3.  **Create a Merge Branch**:
+3.  **Preview What's Coming** (optional but recommended):
+    ```bash
+    # See new commits
+    git log --oneline HEAD..upstream/main
+    
+    # See which files changed
+    git diff HEAD..upstream/main --stat
+    ```
+
+4.  **Create a Merge Branch**:
     ```bash
     git checkout -b sync-upstream-$(date +%Y%m%d)
     ```
 
-4.  **Merge Upstream Main**:
+5.  **Merge Upstream Main**:
     ```bash
-    git merge origin/main
+    git merge upstream/main
     ```
 
-5.  **Resolve Conflicts**:
+6.  **Handle Submodule Conflicts** (if any):
+    Submodules like `code/munkiadmin` and `code/cli/munki/munkipkg` may conflict.
+    ```bash
+    # Update submodule to latest
+    cd code/munkiadmin
+    git fetch origin && git checkout origin/main
+    cd ../..  # Return to repo root
+    
+    # Stage the submodule update
+    git add code/munkiadmin code/cli/munki/munkipkg
+    ```
+
+7.  **Resolve File Conflicts**:
     *   **Branding/Launchd**: Always keep **OUR** versions (HEAD).
-    *   **InfoPlist.strings**: Keep **OUR** versions for ALL locales (ar, de, en, es, fr, it, ja, ko, nl, pt_BR, pt, ru, sv, zh_CN).
-    *   **project.pbxproj**: Keep **OUR** version for `Managed Software Center.xcodeproj/project.pbxproj`.
+    *   **InfoPlist.strings**: Keep **OUR** versions for ALL locales.
+    *   **project.pbxproj**: Keep **OUR** version.
     *   **Version Files**: Always keep **OUR** versions (HEAD) for `Info.plist` files and `version.swift`.
     *   **Documentation**: Keep **OUR** versions of `CUSTOMIZATIONS.md` and `.github/copilot-instructions.md`.
-    *   **Code**: Generally accept **THEIR** (upstream) versions for `code/cli/*` and `code/tools/*`, but **BE CAREFUL** with `munkiimport.swift`. You must manually re-apply our Git integration and sanitization logic if it gets overwritten.
-    *   **Deleted Files**: If upstream deleted a file (like `Package.swift`), allow the deletion unless we specifically need it.
+    *   **Code (`code/cli/*`)**: Generally accept **THEIR** versions. Our `munkiimport.swift` customizations are now upstream!
+    *   **Deleted Files**: Allow deletion unless we specifically need them.
 
-6.  **Verify Customizations**:
-    *   Check `munkiimport.swift` for `isGitRepository` and `sanitizeInstallerFilename` functions.
-    *   Check `Managed Software Center` branding images.
+8.  **Commit the Merge**:
+    ```bash
+    git commit -m "Merge upstream/main: <brief description of changes>"
+    ```
 
-7.  **Push and PR**:
-    Push the branch to `emilycarru` and create a Pull Request for review.
+9.  **Merge Back to Main**:
+    ```bash
+    git checkout main
+    git merge sync-upstream-$(date +%Y%m%d)
+    git branch -d sync-upstream-$(date +%Y%m%d)  # Cleanup
+    ```
+
+10. **Verify & Push**:
+    ```bash
+    # Verify customizations preserved
+    grep -c "isGitRepository\|sanitizeInstallerFilename" code/cli/munki/munkiimport/munkiimport.swift
+    
+    # Test build
+    ./build.sh
+    
+    # Push to origin
+    git push origin main
+    ```
 
 ## Recent Sync History
+
+*   **2025-12-07**: Merged `rodchristiansen/munki:main`.
+    *   **Status**: Clean merge, no code conflicts.
+    *   **Commits merged**: 
+        - `d1c8756b`: munkiimport: Auto-detect architecture from installer filename
+        - `ac4e46d3`: fix: Improve file renaming logic to handle case-insensitive filesystems
+    *   **Submodules updated**: `code/munkiadmin`, `code/cli/munki/munkipkg`
+    *   **New features**: Architecture auto-detection from filename patterns (x64, intel, arm64, etc.)
+
+*   **2025-11-25**: Merged `rodchristiansen/munki:main` (YAML support update).
+    *   **Status**: Conflicts resolved.
+    *   **Notes**: `logouthelper` (Python) was deleted in favor of Swift version. `munkiimport` customizations were preserved (or re-applied). Legacy files (`MPKconvert.swift`, `MPKcreate.swift`, `YAML_SUPPORT.md`) were cleaned up.
 
 *   **2025-06-26**: Merged `rodchristiansen/munki:main`.
     *   **Status**: Conflicts resolved.
     *   **Files kept OURS**: CUSTOMIZATIONS.md, all branding*.jpg, all */InfoPlist.strings (14 locales), project.pbxproj, all launchd plists.
     *   **Files accepted THEIRS**: code/cli/* (Swift CLI tools), code/tools/*, build.sh, YAML_PR.md (new file).
-
-*   **2025-11-25**: Merged `rodchristiansen/munki:main` (YAML support update).
-    *   **Status**: Conflicts resolved.
-    *   **Notes**: `logouthelper` (Python) was deleted in favor of Swift version. `munkiimport` customizations were preserved (or re-applied). Legacy files (`MPKconvert.swift`, `MPKcreate.swift`, `YAML_SUPPORT.md`) were cleaned up.
