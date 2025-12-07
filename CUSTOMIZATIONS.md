@@ -97,14 +97,30 @@ let BUILD = "<BUILD_GOES_HERE>"
 
 When syncing from upstream:
 
-### 1. Fetch & Merge
+### 1. Preview Changes
 ```bash
 git fetch upstream
+git log --oneline HEAD..upstream/main      # See new commits
+git diff HEAD..upstream/main --stat        # See changed files
+```
+
+### 2. Create Merge Branch & Merge
+```bash
 git checkout -b sync-upstream-$(date +%Y%m%d)
 git merge upstream/main
 ```
 
-### 2. Conflict Resolution Priority
+### 3. Handle Submodule Conflicts
+Submodules (`code/munkiadmin`, `code/cli/munki/munkipkg`) often conflict:
+```bash
+# Update submodule to latest
+cd code/munkiadmin && git fetch origin && git checkout origin/main && cd ../..
+
+# Stage submodule updates
+git add code/munkiadmin code/cli/munki/munkipkg
+```
+
+### 4. Conflict Resolution Priority
 
 | File Type | Resolution |
 |-----------|------------|
@@ -115,23 +131,31 @@ git merge upstream/main
 | `Info.plist` (version) | Keep OURS |
 | `version.swift` | Keep OURS |
 | `launchd/*.plist` | Keep OURS |
-| `munkiimport.swift` | **CAREFUL** - merge manually, preserve custom functions |
+| `munkiimport.swift` | Accept THEIRS (our customizations are now upstream!) |
 | `code/cli/*` | Accept THEIRS |
 | `code/tools/*` | Accept THEIRS |
+| Submodules | Update to latest origin/main |
 | Everything else | Accept THEIRS |
 
-### 3. Verify After Merge
+### 5. Commit & Complete Merge
 ```bash
-# Check munkiimport customizations preserved
-grep -c "isGitRepository\|sanitizeInstallerFilename\|gitPullRepoIfNeeded" \
-  code/cli/munki/munkiimport/munkiimport.swift
-
-# Should return 3+ matches
+git commit -m "Merge upstream/main: <brief description>"
+git checkout main
+git merge sync-upstream-$(date +%Y%m%d)
+git branch -d sync-upstream-$(date +%Y%m%d)  # Cleanup
 ```
 
-### 4. Test Build
+### 6. Verify & Push
 ```bash
+# Check munkiimport customizations preserved
+grep -c "isGitRepository\|sanitizeInstallerFilename" \
+  code/cli/munki/munkiimport/munkiimport.swift
+
+# Test build
 ./build.sh
+
+# Push
+git push origin main
 ```
 
 ---
