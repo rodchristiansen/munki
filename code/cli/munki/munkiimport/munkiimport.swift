@@ -203,8 +203,36 @@ func renameInstallerItem(from sourcePath: String, to destinationPath: String) ->
         return sourcePath
     }
     
+    // Check if source and destination are the same file (case-insensitive comparison)
+    // This handles macOS case-insensitive filesystems where munkitools.pkg and MunkiTools.pkg
+    // are the same file. Without this check, we would delete the source file when trying
+    // to "remove the existing destination" before the rename.
+    if sourcePath.lowercased() == destinationPath.lowercased() {
+        // Same file with different case - use a two-step rename via temp file
+        let tempPath = sourcePath + ".tmp_rename"
+        do {
+            try fileManager.moveItem(atPath: sourcePath, toPath: tempPath)
+            try fileManager.moveItem(atPath: tempPath, toPath: destinationPath)
+            let sanitizedName = (destinationPath as NSString).lastPathComponent
+            print("Renamed to \(sanitizedName)")
+            return destinationPath
+        } catch let error as NSError {
+            // Try to recover - move temp back to source if it exists
+            if fileManager.fileExists(atPath: tempPath) {
+                try? fileManager.moveItem(atPath: tempPath, toPath: sourcePath)
+            }
+            if error.code == 30 || error.domain == NSCocoaErrorDomain && error.code == NSFileWriteVolumeReadOnlyError {
+                print("Skipping rename on read-only filesystem...")
+                return sourcePath
+            } else {
+                printStderr("Warning: Could not rename file: \(error.localizedDescription)")
+                return sourcePath
+            }
+        }
+    }
+    
     do {
-        // Remove destination if it already exists
+        // Remove destination if it already exists (only safe when it's a DIFFERENT file)
         if fileManager.fileExists(atPath: destinationPath) {
             try fileManager.removeItem(atPath: destinationPath)
         }
