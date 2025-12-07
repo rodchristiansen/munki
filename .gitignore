@@ -20,3 +20,6 @@ code/cli/munki/build
 # not sure what this is, but don't want to track it
 .idea
 .env
+
+# Swift Package Manager build directory
+code/cli/munki/.build/
