@@ -268,6 +268,12 @@ These files often conflict due to version number differences (Upstream uses sema
 *   **Resolution**: Always keep **OUR** versions (HEAD).
 
 
+## Important Rules
+
+- **NEVER** open interactive editors like `vim`, `nano`, or `vi` in terminal commands
+- **NEVER** use commands that require interactive input (use `-m` flag for commits, `--no-edit` for merges, etc.)
+- Always use non-interactive alternatives or flags
+
 ## Sync Instructions
 
 To fetch updates from upstream and merge them into our internal fork:
