@@ -170,10 +170,28 @@ All fork customizations are documented alongside the customized code:
 
 ## Repository Context
 - Fork of official munki/munki repository
-- Branch: add-yaml-support contains Swift rewrite with YAML support
-- User has been working on this implementation for extended period
+- Branch: add-yaml-support contains YAML support being contributed to upstream via PR
+- Branch: main contains fork customizations plus PR code
 - This is production environment where YAML workflow is preferred
 - **.git/info/exclude**: Updated to exclude COPILOT_MEMORY.md from commits
+
+## Documentation Structure
+
+### Fork Customizations (Will NOT go upstream)
+See [CUSTOMIZATIONS.md](/CUSTOMIZATIONS.md) for full index:
+- munkiimport.swift enhancements (git pull, filename sanitization)
+- build.sh custom wrapper
+- Custom app icon
+- Version file differences
+
+### PR Contributions (Will go upstream)
+See [code/cli/munki/YAML_PR.md](code/cli/munki/YAML_PR.md):
+- YAML support in CLI tools (yamlutils.swift)
+- makepkginfo convert subcommand
+- manifestutil convert subcommand
+- Branch: add-yaml-support (keep clean for PR)
+
+MunkiAdmin YAML support is also a PR contribution (separate repo, branch: add-yaml-support)
 
 ## Ecosystem Integration
 
@@ -218,9 +236,6 @@ This document tracks the differences between our internal fork (`example-org/mun
 ### 1. Custom Branding
 We maintain custom branding assets for Managed Software Center.
 *   **Files**:
-    *   `code/apps/Managed Software Center/Resources/WebResources/branding.jpg`
-    *   `code/apps/Managed Software Center/Resources/WebResources/branding1.jpg`
-    *   `code/apps/Managed Software Center/Resources/WebResources/branding2.jpg`
     *   `code/apps/Managed Software Center/AppIcon.icon/` (Custom icons)
     *   `code/apps/Managed Software Center/*/InfoPlist.strings` (Localized strings)
 
