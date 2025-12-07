@@ -6,16 +6,23 @@
 
 ---
 
-## Repository Comparison
-- **Our Fork:** https://github.com/rodchristiansen/munki/blob/main/code/cli/munki/munkiimport/munkiimport.swift
-- **Official Upstream:** https://github.com/munki/munki/blob/Munki7dev/code/cli/munki/munkiimport/munkiimport.swift
-- **Upstream Branch to Track:** `Munki7dev`
+> **🎉 Good News! (December 2025)**  
+> Our munkiimport customizations have been **merged upstream to `rodchristiansen/munki`**!  
+> This means during upstream syncs, you can now safely **accept THEIRS** for `munkiimport.swift`.  
+> The features below are now part of the upstream codebase.
 
 ---
 
-## Summary - What Makes Our Fork Different
+## Repository Comparison
+- **Our Fork:** https://github.com/emilycarru-its-infra/munki/blob/main/code/cli/munki/munkiimport/munkiimport.swift
+- **Upstream:** https://github.com/rodchristiansen/munki/blob/main/code/cli/munki/munkiimport/munkiimport.swift
+- **Official munki/munki:** https://github.com/munki/munki/blob/Munki7dev/code/cli/munki/munkiimport/munkiimport.swift
 
-We have **10 custom features** (+305 lines) not in official upstream:
+---
+
+## Summary - Features Now in Upstream
+
+These **10 custom features** are now part of `rodchristiansen/munki` upstream:
 
 | # | Feature | Lines | Why We Need It |
 |---|---------|-------|----------------|
