@@ -42,7 +42,8 @@
 - `Resources/WebResources/branding1.jpg` - Alternate branding
 - `Resources/WebResources/branding2.jpg` - Alternate branding
 - `AppIcon.icon/` - Custom application icons
-- `*/InfoPlist.strings` - Localized display names
+- `*/InfoPlist.strings` - Localized display names (all locales)
+- `Managed Software Center.xcodeproj/project.pbxproj` - Xcode project configuration
 
 ### 3. Launchd Configuration
 **Location:** `launchd/`  
@@ -109,10 +110,14 @@ git merge upstream/main
 |-----------|------------|
 | `branding*.jpg` | Keep OURS |
 | `AppIcon.icon/*` | Keep OURS |
+| `*/InfoPlist.strings` | Keep OURS |
+| `Managed Software Center.xcodeproj/project.pbxproj` | Keep OURS |
 | `Info.plist` (version) | Keep OURS |
 | `version.swift` | Keep OURS |
 | `launchd/*.plist` | Keep OURS |
 | `munkiimport.swift` | **CAREFUL** - merge manually, preserve custom functions |
+| `code/cli/*` | Accept THEIRS |
+| `code/tools/*` | Accept THEIRS |
 | Everything else | Accept THEIRS |
 
 ### 3. Verify After Merge
@@ -138,10 +143,13 @@ grep -c "isGitRepository\|sanitizeInstallerFilename\|gitPullRepoIfNeeded" \
 code/apps/Managed Software Center/Resources/WebResources/branding*.jpg
 code/apps/Managed Software Center/AppIcon.icon/
 code/apps/Managed Software Center/*/InfoPlist.strings
+code/apps/Managed Software Center/Managed Software Center.xcodeproj/project.pbxproj
 launchd/LaunchAgents/*.plist
 launchd/LaunchDaemons/*.plist
 build.sh
 build.command
+CUSTOMIZATIONS.md
+.github/copilot-instructions.md
 ```
 
 ### Files We Enhance (merge carefully)
