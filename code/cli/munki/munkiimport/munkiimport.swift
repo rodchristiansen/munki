@@ -151,6 +151,48 @@ func getRepoRootPath(from repoURL: String, repo: Repo) -> String? {
     return nil
 }
 
+// MARK: - Architecture Detection Functions
+
+/// Detect architecture from installer filename
+/// Returns ["arm64"] for Apple Silicon indicators, ["x86_64"] for Intel indicators,
+/// or nil if no architecture pattern is found (caller should default to universal)
+func detectArchitectureFromFilename(_ path: String) -> [String]? {
+    let filename = (path as NSString).lastPathComponent.lowercased()
+    
+    // Remove extension for cleaner matching
+    let nameWithoutExt = (filename as NSString).deletingPathExtension
+    
+    // Intel/x86 patterns (check these first as they're more specific)
+    let intelPatterns = [
+        "x86_64", "x86-64", "x64",
+        "intel", "x86"
+    ]
+    
+    // ARM/Apple Silicon patterns
+    let armPatterns = [
+        "arm64", "arm-64", "aarch64",
+        "apple-silicon", "applesilicon", "apple_silicon",
+        "-arm", "_arm"
+    ]
+    
+    // Check for Intel patterns
+    for pattern in intelPatterns {
+        if nameWithoutExt.contains(pattern) {
+            return ["x86_64"]
+        }
+    }
+    
+    // Check for ARM patterns
+    for pattern in armPatterns {
+        if nameWithoutExt.contains(pattern) {
+            return ["arm64"]
+        }
+    }
+    
+    // No architecture pattern found - return nil to indicate universal/unknown
+    return nil
+}
+
 // MARK: - Filename Sanitization Functions
 
 /// Sanitize the installer item filename with architecture suffix
@@ -415,6 +457,19 @@ struct MunkiImport: AsyncParsableCommand {
             printStderr("Unexpected error: \(type(of: error))")
             printStderr(error)
             throw ExitCode(-1)
+        }
+
+        // Auto-detect architecture from filename if not already set in pkginfo
+        // This handles cases where the package itself doesn't specify architecture
+        // but the filename contains indicators like "x64", "arm64", "intel", etc.
+        if pkginfo["supported_architectures"] == nil {
+            if let detectedArch = detectArchitectureFromFilename(installerItem) {
+                pkginfo["supported_architectures"] = detectedArch
+                let archString = detectedArch.joined(separator: ", ")
+                print("Detected architecture from filename: \(archString)")
+            }
+            // If no architecture detected from filename, leave it nil
+            // The interactive prompt will default to "x86_64, arm64" (universal)
         }
 
         // connect to the repo
