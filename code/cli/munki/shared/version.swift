@@ -19,14 +19,10 @@
 //  limitations under the License.
 
 /// one single place to define a version for CLI tools
-let CLI_TOOLS_VERSION = "7.0.3"
-let BUILD = "<BUILD_GOES_HERE>"
+/// This value is replaced dynamically by build.sh during the build process
+let CLI_TOOLS_VERSION = "__BUILD_VERSION__"
 
 /// Returns version of Munki tools
 func getVersion() -> String {
-    if Int(BUILD) != nil {
-        // BUILD was updated to an integer by the build script
-        return "\(CLI_TOOLS_VERSION).\(BUILD)"
-    }
     return CLI_TOOLS_VERSION
 }

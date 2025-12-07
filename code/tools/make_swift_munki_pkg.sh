@@ -213,7 +213,15 @@ GITREV=$(git log -n1 --format="%H" -- code/cli/munki)
 GITREVINDEX=$(git rev-list --count "$GITREV")
 SVNREV=$((GITREVINDEX + MAGICNUMBER))
 DISTPKGSVNREV=$SVNREV
-VERSION=$MUNKIVERS.$SVNREV
+
+# Check if version is date-based (YYYY.MM.DD.HHMM format) - if so, don't append revision
+if [[ "$MUNKIVERS" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}\.[0-9]{4}$ ]]; then
+    # Date-based version - use as-is
+    VERSION=$MUNKIVERS
+else
+    # Traditional version - append revision
+    VERSION=$MUNKIVERS.$SVNREV
+fi
 
 # get a pseudo-svn revision number for the apps pkg
 APPSGITREV=$(git log -n1 --format="%H" -- code/apps)
@@ -246,8 +254,14 @@ fi
 
 # get base apps version from MSC.app
 APPSVERSION=$(defaults read "$MUNKIROOT/code/apps/Managed Software Center/Managed Software Center/Info" CFBundleShortVersionString)
-# append the APPSSVNREV
-APPSVERSION=$APPSVERSION.$APPSSVNREV
+# Use same logic as VERSION - date-based versions don't get revision suffix
+if [[ "$MUNKIVERS" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}\.[0-9]{4}$ ]]; then
+    # Use the date-based version for apps too
+    APPSVERSION=$MUNKIVERS
+else
+    # append the APPSSVNREV for traditional versioning
+    APPSVERSION=$APPSVERSION.$APPSSVNREV
+fi
 
 # get a pseudo-svn revision number for the launchd pkg
 LAUNCHDGITREV=$(git log -n1 --format="%H" -- launchd/LaunchDaemons launchd/LaunchAgents)
@@ -282,7 +296,12 @@ if [ "$PYTHONPKG" == "YES" ] ; then
 fi
 
 # get a pseudo-svn revision number for the metapackage
-DISTPKGVERSION=$MUNKIVERS.$DISTPKGSVNREV
+# Use same logic as VERSION - date-based versions don't get revision suffix
+if [[ "$MUNKIVERS" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}\.[0-9]{4}$ ]]; then
+    DISTPKGVERSION=$MUNKIVERS
+else
+    DISTPKGVERSION=$MUNKIVERS.$DISTPKGSVNREV
+fi
 
 DISTPKG="$OUTPUTDIR/munkitools-$DISTPKGVERSION.pkg"
 
