@@ -532,6 +532,9 @@ struct MunkiImport: AsyncParsableCommand {
                         }
                     } else if let value = matchingPkgInfo[key] as? String {
                         print("\(leftPad(name, 21)): \(value)")
+                    } else if matchingPkgInfo[key] != nil {
+                        // Value exists but isn't a string (e.g., NSNull) - show as empty
+                        print("\(leftPad(name, 21)): ")
                     }
                 }
                 print()
@@ -553,8 +556,10 @@ struct MunkiImport: AsyncParsableCommand {
                     } else if pkginfo["display_name"] == nil {
                         pkginfo["display_name"] = matchingPkgInfo["name"]
                     }
-                    if pkginfo["description"] == nil {
-                        pkginfo["description"] = matchingPkgInfo["description"]
+                    if pkginfo["description"] == nil,
+                       let matchingDescription = matchingPkgInfo["description"] as? String,
+                       !matchingDescription.isEmpty {
+                        pkginfo["description"] = matchingDescription
                     }
                     // if a subdirectory hasn't been specified, use the same one as the
                     // matching pkginfo
@@ -645,6 +650,9 @@ struct MunkiImport: AsyncParsableCommand {
                 ("Unattended uninstall", "unattended_uninstall", "Bool"),
                 ("Architecture(s)", "supported_architectures", "StringArray"),
             ]
+            // Fields where empty string means "remove/don't include"
+            let optionalStringFields: Set<String> = ["display_name", "description", "category", "developer"]
+            
             for (name, key, kind) in editfields {
                 let prompt = leftPad(name, 20) + ": "
                 var defaultValue = ""
@@ -665,7 +673,12 @@ struct MunkiImport: AsyncParsableCommand {
                     } else if kind == "StringArray" {
                         pkginfo[key] = newValue.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
                     } else {
-                        pkginfo[key] = newValue
+                        // For optional string fields, remove the key if empty
+                        if newValue.isEmpty && optionalStringFields.contains(key) {
+                            pkginfo.removeValue(forKey: key)
+                        } else {
+                            pkginfo[key] = newValue
+                        }
                     }
                 }
             }
