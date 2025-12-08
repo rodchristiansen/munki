@@ -21,6 +21,23 @@
 import Darwin.C
 import Foundation
 
+/// GUI-based CLI editors that return immediately without --wait flag.
+/// These editors launch a window and return control to the terminal immediately,
+/// so we need --wait to block until the user closes the file.
+private let guiCliEditors = ["code", "subl", "atom", "mate", "bbedit", "nova", "zed", "cursor"]
+
+/// Check if an editor needs --wait flag to block until file is closed.
+/// GUI-based CLI launchers (VS Code, Sublime, etc.) return immediately after
+/// opening a window, unlike terminal editors (vim, nano) which naturally block.
+func editorNeedsWaitFlag(_ editorPath: String) -> Bool {
+    let editorName = URL(fileURLWithPath: editorPath).lastPathComponent.lowercased()
+    // Handle variations like "code-insiders", "subl3", etc.
+    for knownEditor in guiCliEditors {
+        if editorName.hasPrefix(knownEditor) { return true }
+    }
+    return false
+}
+
 /// If there is exactly one supported architecture, return a string with it
 /// Otherwise return empty string
 func getSingleArch(_ pkginfo: PlistDict) -> String {
@@ -694,7 +711,21 @@ func editPkgInfoInExternalEditor(_ pkginfo: PlistDict) -> PlistDict {
         }
         var cmd = ""
         var args = [String]()
-        if editor.hasSuffix(".app") {
+        // Check if editor is an app bundle or a CLI command
+        let isAppBundle = editor.hasSuffix(".app")
+        // GUI CLI editors (VS Code, Sublime, etc.) need --wait flag to block
+        // until the file is closed, unlike terminal editors which block naturally
+        let needsWait = !isAppBundle && editorNeedsWaitFlag(editor)
+        
+        if needsWait {
+            // GUI CLI editor - use --wait flag to wait for file to be closed
+            do {
+                try posixSpawn(editor, "--wait", filePath)
+            } catch {
+                printStderr(error.localizedDescription)
+                return pkginfo
+            }
+        } else if isAppBundle {
             cmd = "/usr/bin/open"
             args = ["-a", editor, filePath]
             let result = runCLI(cmd, arguments: args)
