@@ -570,6 +570,7 @@ struct MunkiImport: AsyncParsableCommand {
                     }
                     for (key, kind) in [
                         ("name", "String"),
+                        ("catalogs", "StringArray"),
                         ("blocking_applications", "StringArray"),
                         ("forced_install", "Bool"),
                         ("forced_uninstall", "Bool"),
@@ -685,7 +686,7 @@ struct MunkiImport: AsyncParsableCommand {
             // special handling for catalogs
             let prompt = leftPad("Catalogs", 20) + ": "
             let catalogs = pkginfo["catalogs"] as? [String] ?? ["testing"]
-            let defaultValue = catalogs.joined(separator: ",")
+            let defaultValue = catalogs.joined(separator: ", ")
             if let newValue = getInput(prompt: prompt, defaultText: defaultValue) {
                 pkginfo["catalogs"] = newValue.components(separatedBy: ",").map {
                     $0.trimmingCharacters(in: .whitespaces)
