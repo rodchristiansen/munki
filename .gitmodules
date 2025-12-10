@@ -7,3 +7,12 @@
 [submodule "code/cli/munki/munkipkg"]
 	path = code/cli/munki/munkipkg
 	url = https://github.com/rodchristiansen/munki-pkg.git
+[submodule "code/munkireport/managedinstalls"]
+	path = code/munkireport/managedinstalls
+	url = https://github.com/rodchristiansen/managedinstalls.git
+[submodule "code/munkireport/munkireport"]
+	path = code/munkireport/munkireport
+	url = https://github.com/rodchristiansen/munkireport.git
+[submodule "code/munkireport/munkiinfo"]
+	path = code/munkireport/munkiinfo
+	url = https://github.com/rodchristiansen/munkiinfo.git
