@@ -18,11 +18,18 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
+import Foundation
+
 /// one single place to define a version for CLI tools
 /// This value is replaced dynamically by build.sh during the build process
 let CLI_TOOLS_VERSION = "__BUILD_VERSION__"
 
 /// Returns version of Munki tools
 func getVersion() -> String {
+    if CLI_TOOLS_VERSION.hasPrefix("__BUILD_") {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy.MM.dd.HHmm"
+        return formatter.string(from: Date())
+    }
     return CLI_TOOLS_VERSION
 }
