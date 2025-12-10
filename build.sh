@@ -241,6 +241,42 @@ restore_version() {
 # Trap to restore version on exit (success or failure)
 trap restore_version EXIT
 
+# Build munkipkg from its separate Swift Package (submodule)
+echo -e "${BLUE}Building munkipkg...${NC}"
+MUNKIPKG_DIR="$SCRIPT_DIR/code/cli/munki/munkipkg"
+MUNKIPKG_LOG="/tmp/munkipkg_build.log"
+
+if [ -d "$MUNKIPKG_DIR" ] && [ -f "$MUNKIPKG_DIR/Package.swift" ]; then
+    # Temporarily disable exit on error for this build
+    set +e
+    pushd "$MUNKIPKG_DIR" > /dev/null
+    swift build -c release > "$MUNKIPKG_LOG" 2>&1
+    MUNKIPKG_RESULT=$?
+    popd > /dev/null
+    set -e
+    
+    if [ $MUNKIPKG_RESULT -eq 0 ]; then
+        # Copy munkipkg binary to the binaries directory so it gets packaged
+        MUNKIPKG_BINARY="$MUNKIPKG_DIR/.build/release/munkipkg"
+        if [ -f "$MUNKIPKG_BINARY" ]; then
+            mkdir -p "$SCRIPT_DIR/code/build/binaries"
+            cp "$MUNKIPKG_BINARY" "$SCRIPT_DIR/code/build/binaries/"
+            echo -e "${GREEN}✓${NC} munkipkg built successfully"
+        else
+            echo -e "${YELLOW}⚠${NC} munkipkg binary not found at expected location"
+            echo -e "    Expected: $MUNKIPKG_BINARY"
+        fi
+    else
+        echo -e "${YELLOW}⚠${NC} munkipkg build failed (exit code: $MUNKIPKG_RESULT)"
+        echo -e "    Build log: $MUNKIPKG_LOG"
+        echo -e "    Continuing without munkipkg..."
+    fi
+else
+    echo -e "${YELLOW}⚠${NC} munkipkg package not found (submodule not initialized?)"
+    echo -e "    Expected: $MUNKIPKG_DIR/Package.swift"
+fi
+echo ""
+
 # Run the build
 LOG_FILE="/tmp/munki_build_$(date +%Y%m%d_%H%M%S).log"
 if bash code/tools/make_swift_munki_pkg.sh $BUILD_OPTS 2>&1 | tee "$LOG_FILE"; then
@@ -319,6 +355,9 @@ if bash code/tools/make_swift_munki_pkg.sh $BUILD_OPTS 2>&1 | tee "$LOG_FILE"; t
         echo -e "  ${GREEN}✓${NC} makepkginfo convert    (pkginfo file conversion)"
         echo -e "  ${GREEN}✓${NC} manifestutil convert   (manifest file conversion)"
         echo -e "  ${GREEN}✓${NC} Native YAML support    (all tools)"
+        echo ""
+        echo -e "${BLUE}Fork Additions:${NC}"
+        echo -e "  ${GREEN}✓${NC} munkipkg               (package builder in /usr/local/munki)"
         echo ""
         
         if [ "$SIGN" = true ]; then

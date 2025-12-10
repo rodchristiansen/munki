@@ -566,21 +566,25 @@ mkdir -m 755 "$ADMINROOT/usr/local"
 mkdir -m 755 "$ADMINROOT/usr/local/munki"
 # Copy command line admin utilities.
 # edit this if list of tools changes!
-for TOOL in makecatalogs makepkginfo manifestutil munkiimport iconimporter repoclean 
+for TOOL in makecatalogs makepkginfo manifestutil munkiimport iconimporter repoclean munkipkg
 do
-    cp -X "$MUNKIROOT/code/build/binaries/$TOOL" "$ADMINROOT/usr/local/munki/" 2>&1
-    # sign tool
-    if [ "$APPSIGNINGCERT" != "" ]; then
-        echo "Signing $TOOL..."
-        /usr/bin/codesign -f -s "$APPSIGNINGCERT" \
-            --preserve-metadata=entitlements \
-            --options runtime --timestamp --verbose \
-            "$ADMINROOT/usr/local/munki/$TOOL"
-        SIGNING_RESULT="$?"
-        if [ "$SIGNING_RESULT" -ne 0 ]; then
-            echo "Error signing $TOOL: $SIGNING_RESULT"
-            exit 2
+    if [ -f "$MUNKIROOT/code/build/binaries/$TOOL" ]; then
+        cp -X "$MUNKIROOT/code/build/binaries/$TOOL" "$ADMINROOT/usr/local/munki/" 2>&1
+        # sign tool
+        if [ "$APPSIGNINGCERT" != "" ]; then
+            echo "Signing $TOOL..."
+            /usr/bin/codesign -f -s "$APPSIGNINGCERT" \
+                --preserve-metadata=entitlements \
+                --options runtime --timestamp --verbose \
+                "$ADMINROOT/usr/local/munki/$TOOL"
+            SIGNING_RESULT="$?"
+            if [ "$SIGNING_RESULT" -ne 0 ]; then
+                echo "Error signing $TOOL: $SIGNING_RESULT"
+                exit 2
+            fi
         fi
+    else
+        echo "Warning: $TOOL not found in binaries directory, skipping..."
     fi
 done
 # Set permissions.
