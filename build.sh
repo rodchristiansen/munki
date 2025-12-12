@@ -215,11 +215,12 @@ echo ""
 # Generate dynamic version string (YYYY.MM.DD.HHMM format)
 BUILD_VERSION=$(date +"%Y.%m.%d.%H%M")
 VERSION_FILE="$SCRIPT_DIR/code/cli/munki/shared/version.swift"
+MUNKIPKG_VERSION_FILE="$SCRIPT_DIR/code/cli/munki/munkipkg/munkipkg/version.swift"
 
 echo -e "${BLUE}Setting build version...${NC}"
 echo -e "  Version: ${GREEN}$BUILD_VERSION${NC}"
 
-# Replace placeholder in version.swift
+# Replace placeholder in version.swift (main munki)
 if grep -q "__BUILD_VERSION__" "$VERSION_FILE"; then
     sed -i '' "s/__BUILD_VERSION__/$BUILD_VERSION/g" "$VERSION_FILE"
     echo -e "${GREEN}✓${NC} Version injected into version.swift"
@@ -228,6 +229,16 @@ else
     echo -e "${YELLOW}⚠${NC} Version placeholder not found (already set or modified)"
     VERSION_INJECTED=false
 fi
+
+# Replace placeholder in munkipkg version.swift
+if grep -q "{{VERSION_PLACEHOLDER}}" "$MUNKIPKG_VERSION_FILE"; then
+    sed -i '' "s/{{VERSION_PLACEHOLDER}}/$BUILD_VERSION/g" "$MUNKIPKG_VERSION_FILE"
+    echo -e "${GREEN}✓${NC} Version injected into munkipkg version.swift"
+    MUNKIPKG_VERSION_INJECTED=true
+else
+    echo -e "${YELLOW}⚠${NC} munkipkg version placeholder not found (already set or modified)"
+    MUNKIPKG_VERSION_INJECTED=false
+fi
 echo ""
 
 # Function to restore version placeholder
@@ -235,6 +246,10 @@ restore_version() {
     if [ "$VERSION_INJECTED" = true ]; then
         sed -i '' "s/$BUILD_VERSION/__BUILD_VERSION__/g" "$VERSION_FILE"
         echo -e "${GREEN}✓${NC} Version placeholder restored"
+    fi
+    if [ "$MUNKIPKG_VERSION_INJECTED" = true ]; then
+        sed -i '' "s/$BUILD_VERSION/{{VERSION_PLACEHOLDER}}/g" "$MUNKIPKG_VERSION_FILE"
+        echo -e "${GREEN}✓${NC} munkipkg version placeholder restored"
     fi
 }
 
