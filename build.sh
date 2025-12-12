@@ -265,7 +265,15 @@ if [ -d "$MUNKIPKG_DIR" ] && [ -f "$MUNKIPKG_DIR/Package.swift" ]; then
     # Temporarily disable exit on error for this build
     set +e
     pushd "$MUNKIPKG_DIR" > /dev/null
-    swift build -c release > "$MUNKIPKG_LOG" 2>&1
+    
+    # munkipkg uses a Makefile to generate version.swift before building
+    # The 'make release' target generates version.swift and then runs swift build -c release
+    if [ -f "Makefile" ]; then
+        make release > "$MUNKIPKG_LOG" 2>&1
+    else
+        # Fallback to direct swift build if no Makefile
+        swift build -c release > "$MUNKIPKG_LOG" 2>&1
+    fi
     MUNKIPKG_RESULT=$?
     popd > /dev/null
     set -e
