@@ -3,3 +3,37 @@
  
 # munki-python
 code/client/*  linguist-language=Python
+
+# =============================================================================
+# UPSTREAM MERGE RULES - Fork Customizations
+# These rules tell Git how to handle specific files during upstream merges
+# Uses the "ours" merge driver to always keep our version
+# =============================================================================
+
+# Branding images - our custom images
+code/apps/Managed[[:space:]]Software[[:space:]]Center/Managed[[:space:]]Software[[:space:]]Center/Resources/WebResources/branding.jpg merge=ours
+code/apps/Managed[[:space:]]Software[[:space:]]Center/Managed[[:space:]]Software[[:space:]]Center/Resources/WebResources/branding1.jpg merge=ours
+code/apps/Managed[[:space:]]Software[[:space:]]Center/Managed[[:space:]]Software[[:space:]]Center/Resources/WebResources/branding2.jpg merge=ours
+
+# Localized strings - all locales (our "Software Center" naming)
+code/apps/Managed[[:space:]]Software[[:space:]]Center/Managed[[:space:]]Software[[:space:]]Center/**/InfoPlist.strings merge=ours
+
+# Xcode project - contains our build settings
+code/apps/Managed[[:space:]]Software[[:space:]]Center/Managed[[:space:]]Software[[:space:]]Center.xcodeproj/project.pbxproj merge=ours
+
+# Launchd plists - our custom paths and settings
+launchd/LaunchAgents/*.plist merge=ours
+launchd/LaunchDaemons/*.plist merge=ours
+
+# Fork documentation - we maintain these
+.github/copilot-instructions.md merge=ours
+CUSTOMIZATIONS.md merge=ours
+
+# =============================================================================
+# Binary files
+# =============================================================================
+*.jpg binary
+*.png binary
+*.icns binary
+*.pkg binary
+*.dmg binary
