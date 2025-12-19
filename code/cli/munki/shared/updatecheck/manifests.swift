@@ -213,6 +213,7 @@ func getPrimaryManifest(alternateIdentifier: String? = nil) throws -> String {
         if sn != "UNKNOWN" {
             identifiers.append(sn)
         }
+        identifiers.append("Orphaned")
         identifiers.append("site_default")
 
         for (index, identifier) in identifiers.enumerated() {
