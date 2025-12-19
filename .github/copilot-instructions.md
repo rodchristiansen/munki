@@ -1,6 +1,13 @@
 ````instructions
 # GitHub Copilot Memory - Munki YAML Support Project
 
+## CRITICAL: Mac VS Code Terminal Limitations
+
+**NEVER** use `cat` with heredocs (`<< 'EOF'`) or output large scripts directly in the VS Code integrated terminal on macOS. This breaks the terminal and stops agent runs. Instead:
+- Write scripts to files using the `create_file` tool, then execute them
+- Use the `replace_string_in_file` or `edit` tools for file modifications
+- For small outputs, use `echo` with simple strings only
+
 ## Project Overview
 **Repository**: rodchristiansen/munki (fork of munki/munki)  
 **Branch**: add-yaml-support  
