@@ -71,12 +71,12 @@ if [[ "$NEW_COMMITS" == "0" ]]; then
 fi
 
 echo -e "${YELLOW}Found $NEW_COMMITS new commit(s) from upstream:${NC}"
-git log --oneline HEAD..upstream/main
+git --no-pager log --oneline HEAD..upstream/main
 echo ""
 
 # Show which files will change
 echo -e "${BLUE}Files that will be updated:${NC}"
-git diff --stat HEAD..upstream/main | tail -20
+git --no-pager diff --stat HEAD..upstream/main | tail -20
 echo ""
 
 # List protected files that will be auto-kept
