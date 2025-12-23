@@ -39,6 +39,9 @@ struct MakeCatalogs: AsyncParsableCommand {
           help: "Skip checking of pkg existence. Useful when pkgs aren't on the same server as pkginfo, catalogs and manifests.")
     var skipPkgCheck = false
 
+    @Flag(name: [.long, .customShort("q")], help: "Suppress normal output messages.")
+    var silent = false
+
     @Flag(help: "Write catalogs in YAML format instead of XML plist.")
     var yaml = false
 
@@ -100,7 +103,7 @@ struct MakeCatalogs: AsyncParsableCommand {
         let options = MakeCatalogOptions(
             skipPkgCheck: skipPkgCheck,
             force: force,
-            verbose: true,
+            verbose: !silent,
             yamlOutput: shouldUseYaml
         )
 
