@@ -5,11 +5,9 @@
 **Location**: `code/cli/munki/munkiimport/`
 
 ---
-
-> **🎉 Good News! (December 2025)**  
-> Our munkiimport customizations have been **merged upstream to `rodchristiansen/munki`**!  
-> This means during upstream syncs, you can now safely **accept THEIRS** for `munkiimport.swift`.  
-> The features below are now part of the upstream codebase.
+ 
+> Added `minimum_munki_version` to extended template field copying (Feature #5).  
+> This field will now be preserved from matching templates during import operations.
 
 ---
 
@@ -392,12 +390,11 @@ func renameInstallerItem(from sourcePath: String, to destinationPath: String) ->
 
 ### 5. Extended Template Field Copying 
 
-**Status:** Fully implemented  
 **Python Location:** Lines 593-639  
 **Swift Location:** Lines 444-501 in munkiimport.swift
 
 #### What It Does
-Copies additional fields from matching templates that may not be in basic pkginfo, including:
+Copies additional fields from matching templates that may not be in basic pkginfo, including scripts, metadata, and version requirements.
 
 **Script Fields:**
 - `preinstall_script`
@@ -420,6 +417,7 @@ Copies additional fields from matching templates that may not be in basic pkginf
 - `category`
 - `developer`
 - `icon_name`
+- `minimum_munki_version`
 - `unused_software_removal_info`
 - `localized_strings`
 - `featured`
@@ -436,6 +434,7 @@ for key in ['blocking_applications',
             'category',
             'developer',
             'icon_name',
+            'minimum_munki_version',
             'unused_software_removal_info',
             'localized_strings',
             'featured',
@@ -463,6 +462,7 @@ let extendedFields = [
     "category",
     "developer",
     "icon_name",
+    "minimum_munki_version",
     "unused_software_removal_info",
     "localized_strings",
     "featured",
