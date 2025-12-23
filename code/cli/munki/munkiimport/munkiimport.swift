@@ -581,6 +581,7 @@ struct MunkiImport: AsyncParsableCommand {
                         ("category", "String"),
                         ("developer", "String"),
                         ("icon_name", "String"),
+                        ("minimum_munki_version", "String"),
                         ("unused_software_removal_info", "Dict"),
                         ("localized_strings", "Dict"),
                         ("featured", "Bool"),
