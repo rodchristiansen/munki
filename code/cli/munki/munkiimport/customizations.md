@@ -20,7 +20,7 @@
 
 ## Summary - Features Now in Upstream
 
-These **10 custom features** are now part of `rodchristiansen/munki` upstream:
+These **12 custom features** are now part of `rodchristiansen/munki` upstream:
 
 | # | Feature | Lines | Why We Need It |
 |---|---------|-------|----------------|
@@ -34,6 +34,8 @@ These **10 custom features** are now part of `rodchristiansen/munki` upstream:
 | 8 | Catalogs display in matches | 413-427 | Show which catalogs items are in |
 | 9 | Full repo path display | 732-746 | Show absolute paths |
 | 10 | Git repository detection | 120-134 | Walk tree to find .git |
+| 11 | **Auto-open pkginfo in editor** | munkiimport.swift:820-836 | Open saved pkginfo after import without blocking |
+| 12 | **Auto-run makecatalogs after import** | munkiimport.swift:829-837 | Silently rebuild catalogs after every import |
 
 **When merging from upstream:** Keep all 5 custom functions + enhanced sections. See [Merging Upstream Changes](#merging-upstream-changes) section.
 
@@ -50,21 +52,23 @@ These **10 custom features** are now part of `rodchristiansen/munki` upstream:
 
 ## Quick Reference
 
-### All Features (10 Total)
+### All Features (12 Total)
 
-#### Core Features (4)
+#### Core Features (6)
 1. **Git pull automation** with rebase fallback
 2. **Silent makecatalogs** before import  
 3. **Filename sanitization** with architecture suffixes (-Apple/-Intel)
 4. **Read-only filesystem** handling
+5. **Auto-open pkginfo in editor** after save (non-blocking, if editor configured)
+6. **Auto-run makecatalogs** after import (silent mode)
 
 #### Extended Features (6)
-5. **Script field copying** (pre/post install/uninstall scripts)
-6. **forced_install/forced_uninstall** copying
-7. **installs/items_to_copy** array path handling
-8. **Interactive architecture** editing (comma-separated)
-9. **Catalogs display** in matching items
-10. **Full absolute path** display for saved pkginfo
+7. **Script field copying** (pre/post install/uninstall scripts)
+8. **forced_install/forced_uninstall** copying
+9. **installs/items_to_copy** array path handling
+10. **Interactive architecture** editing (comma-separated)
+11. **Catalogs display** in matching items
+12. **Full absolute path** display for saved pkginfo
 
 ### Visual Feature Map
 
@@ -791,6 +795,123 @@ Remote Repo:
 - Errors are logged but don't block import completion
 
 **Note:** This is the same implementation as feature #2, but executed at a different point in the workflow (after import vs before).
+
+---
+
+### 11. Auto-Open Pkginfo in Editor
+
+**Status:** Fully implemented  
+**Swift Location:** Lines 820-836 in `munkiimport.swift`
+
+#### What It Does
+- Automatically opens the saved pkginfo file in configured editor **after** import completes
+- Opens the actual file from the repo (not a temp file)
+- Runs **after** makecatalogs completes (non-blocking)
+- Eliminates the interactive editing step during import
+- Only works with FileRepo (requires full absolute path)
+
+#### Behavior Changes
+
+**Before:**
+```
+Copy installer item to repo...
+Edit pkginfo before upload? [y/N]: y
+[opens temp file in /var, waits for editing]
+Pkginfo editing complete? [y/N]: y
+Saved pkginfo to: /path/to/pkgsinfo/Firefox-120.0.yaml
+```
+
+**After:**
+```
+Copy installer item to repo...
+Saved pkginfo to: /path/to/pkgsinfo/Firefox-120.0.yaml
+[runs makecatalogs silently]
+[automatically opens saved file in background]
+```
+
+#### Code Changes
+- Removed call to `editPkgInfoInExternalEditor()` before save
+- Added post-save editor launch using `/usr/bin/open -a`
+- Non-blocking: uses system `open` command which launches and returns immediately
+- Opens the real saved file, not a temporary copy
+
+#### Configuration
+Behavior is controlled by the `editor` preference in munkiimport config:
+```bash
+# If editor is set, automatically opens after save
+munkiimport --configure
+# Set editor to empty string to disable automatic opening
+```
+
+#### Technical Details
+- Uses `/usr/bin/open -a <editor> <fullPath>` for both app bundles and CLI editors
+- Requires `getRepoRootPath()` to resolve full filesystem path
+- Only triggers if `!nointeractive` mode and editor is configured
+- Falls back gracefully if repo doesn't support full paths
+
+---
+
+### 12. Auto-Run Makecatalogs After Import
+
+**Status:** Fully implemented  
+**Swift Location:** Lines 829-837 in `munkiimport.swift`
+
+#### What It Does
+- Automatically runs `makecatalogs` in silent mode after every successful import
+- Eliminates the "Rebuild catalogs? [y/N]" prompt
+- Ensures catalogs are always up-to-date after imports
+- Uses quiet mode to suppress verbose output
+
+#### Behavior Changes
+
+**Before:**
+```
+Saved pkginfo to: /path/to/pkgsinfo/Firefox-120.0.yaml
+Rebuild catalogs? [y/N]: y
+[runs makecatalogs with output]
+```
+
+**After:**
+```
+Saved pkginfo to: /path/to/pkgsinfo/Firefox-120.0.yaml
+[automatically runs makecatalogs silently]
+```
+
+#### Code Changes
+```swift
+// Old code (prompted user)
+if !munkiImportOptions.nointeractive {
+    print("Rebuild catalogs? [y/N] ", terminator: "")
+    if let answer = readLine(),
+       answer.lowercased().hasPrefix("y")
+    {
+        let makecatalogOptions = MakeCatalogOptions()
+        var catalogsmaker = try await CatalogsMaker(repo: repo, options: makecatalogOptions)
+        await catalogsmaker.makecatalogs()
+        // error handling...
+    }
+}
+
+// New code (always runs silently)
+if !munkiImportOptions.nointeractive {
+    let makecatalogOptions = MakeCatalogOptions()
+    makecatalogOptions.quiet = true
+    var catalogsmaker = try await CatalogsMaker(repo: repo, options: makecatalogOptions)
+    await catalogsmaker.makecatalogs()
+    // Continues even if makecatalogs fails
+}
+```
+
+#### Why Silent Mode?
+- Makecatalogs already runs silently at the *start* of import (Feature #2)
+- Consistent behavior: both pre-import and post-import runs are silent
+- Reduces terminal noise during batch imports
+- Errors are logged internally but don't block workflow
+
+#### Integration with Feature #2
+This feature complements Feature #2 (Silent Makecatalogs Before Import):
+- **Feature #2**: Runs before import to detect existing items and enable template matching
+- **Feature #12**: Runs after import to update catalogs with newly imported item
 
 ---
 

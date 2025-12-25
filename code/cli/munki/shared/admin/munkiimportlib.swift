@@ -684,14 +684,11 @@ func editPkgInfoInExternalEditor(_ pkginfo: PlistDict) -> PlistDict {
     guard let editor = adminPref("editor") as? String, !editor.isEmpty else {
         return pkginfo
     }
-    print("Edit pkginfo before upload? [y/N]: ", terminator: "")
-    if let answer = readLine(),
-       answer.lowercased().hasPrefix("y")
-    {
-        guard let tempDir = TempDir.shared.makeTempDir() else {
-            printStderr("Could not get a temporary working directory")
-            return pkginfo
-        }
+    // Always open editor if configured (no prompt)
+    guard let tempDir = TempDir.shared.makeTempDir() else {
+        printStderr("Could not get a temporary working directory")
+        return pkginfo
+    }
         defer {
             try? FileManager.default.removeItem(atPath: tempDir)
         }
@@ -733,14 +730,8 @@ func editPkgInfoInExternalEditor(_ pkginfo: PlistDict) -> PlistDict {
                 printStderr("Problem running editor \(editor): \(result.error)")
                 return pkginfo
             }
-            // wait for editor to exit
-            var response: String? = "no"
-            while let answer = response,
-                  !answer.lowercased().hasPrefix("y")
-            {
-                print("Pkginfo editing complete? [y/N]: ", terminator: "")
-                response = readLine()
-            }
+            // Note: App bundle editors run async - pkginfo will be read after this returns
+            print("Opened pkginfo in \(editor)...")
         } else {
             do {
                 try posixSpawn(editor, filePath)
@@ -763,6 +754,5 @@ func editPkgInfoInExternalEditor(_ pkginfo: PlistDict) -> PlistDict {
             printStderr("Problem reading edited pkginfo: \(error)")
             return pkginfo
         }
-    }
     return pkginfo
 }

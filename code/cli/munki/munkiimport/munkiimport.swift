@@ -810,10 +810,6 @@ struct MunkiImport: AsyncParsableCommand {
             // adjust the pkginfo uninstaller_item_location with actual location/identifier
             pkginfo["uninstaller_item_location"] = (uploadedPkgPath as NSString).pathComponents[1...].joined(separator: "/")
         }
-        // One last chance to edit the pkginfo
-        if !munkiImportOptions.nointeractive {
-            pkginfo = editPkgInfoInExternalEditor(pkginfo)
-        }
         // Now upload pkginfo
         var pkginfoPath = ""
         do {
@@ -826,22 +822,27 @@ struct MunkiImport: AsyncParsableCommand {
             } else {
                 print("Saved pkginfo to \(pkginfoPath).")
             }
+        } catch let error as MunkiError {
+            printStderr("Error saving pkginfo: \(error.description)")
+            throw ExitCode(-1)
+        } catch {
+            printStderr("Error saving pkginfo: \(error)")
+            throw ExitCode(-1)
         }
-        // Maybe rebuild the catalogs?
+        // Rebuild the catalogs silently after import
         if !munkiImportOptions.nointeractive {
-            print("Rebuild catalogs? [y/N] ", terminator: "")
-            if let answer = readLine(),
-               answer.lowercased().hasPrefix("y")
-            {
-                let makecatalogOptions = MakeCatalogOptions()
-                var catalogsmaker = try await CatalogsMaker(repo: repo, options: makecatalogOptions)
-                await catalogsmaker.makecatalogs()
-                if !catalogsmaker.errors.isEmpty {
-                    for error in catalogsmaker.errors {
-                        printStderr(error)
-                    }
-                }
-            }
+            let makecatalogOptions = MakeCatalogOptions(verbose: false)
+            var catalogsmaker = try await CatalogsMaker(repo: repo, options: makecatalogOptions)
+            await catalogsmaker.makecatalogs()
+            // Continue even if makecatalogs fails
+        }
+        // Open the saved pkginfo in the configured editor (non-blocking)
+        if !munkiImportOptions.nointeractive,
+           let editor = adminPref("editor") as? String,
+           !editor.isEmpty,
+           let repoRoot = getRepoRootPath(from: repoURL, repo: repo) {
+            let fullPath = (repoRoot as NSString).appendingPathComponent(pkginfoPath)
+            let _ = runCLI("/usr/bin/open", arguments: ["-a", editor, fullPath])
         }
     }
 }
