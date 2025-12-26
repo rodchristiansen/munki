@@ -29,9 +29,9 @@
 - Git pull with rebase fallback before imports
 - Silent makecatalogs refresh
 - Filename sanitization with `-Apple`/`-Intel` architecture suffixes
+- Automatic architecture detection from filenames (Intel-only packages)
 - Read-only filesystem handling
 - Extended template field copying (scripts, forced_install, etc.)
-- Interactive architecture editing
 
 ### 2. Branding Assets
 **Location:** `code/apps/Managed Software Center/`  
