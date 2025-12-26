@@ -28,6 +28,31 @@ launchd/LaunchDaemons/*.plist merge=ours
 # Fork documentation - we maintain these
 .github/copilot-instructions.md merge=ours
 CUSTOMIZATIONS.md merge=ours
+code/cli/munki/munkiimport/customizations.md merge=ours
+code/cli/munki/makecatalogs/customizations.md merge=ours
+code/apps/Managed[[:space:]]Software[[:space:]]Center/customizations.md merge=ours
+code/tools/customizations.md merge=ours
+launchd/customizations.md merge=ours
+
+# Build scripts - our custom build system
+build.sh merge=ours
+build.command merge=ours
+
+# Version files - we manage versioning
+code/cli/munki/shared/version.swift merge=ours
+code/apps/Managed[[:space:]]Software[[:space:]]Center/Managed[[:space:]]Software[[:space:]]Center/Info.plist merge=ours
+code/apps/MunkiStatus/MunkiStatus/Info.plist merge=ours
+
+# App icons - our custom branding
+code/apps/Managed[[:space:]]Software[[:space:]]Center/Managed[[:space:]]Software[[:space:]]Center/AppIcon.icon/** merge=ours
+code/apps/MunkiStatus/MunkiStatus/AppIcon.icon/** merge=ours
+code/apps/munki-notifier/munki-notifier/AppIcon.icon/** merge=ours
+
+# munkiimport - our enhanced version with git pull, sanitization, etc.
+code/cli/munki/munkiimport/munkiimport.swift merge=ours
+
+# Sync script itself
+sync-upstream.sh merge=ours
 
 # =============================================================================
 # Binary files
