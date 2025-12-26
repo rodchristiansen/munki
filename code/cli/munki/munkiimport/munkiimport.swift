@@ -469,7 +469,7 @@ struct MunkiImport: AsyncParsableCommand {
                 print("Detected architecture from filename: \(archString)")
             }
             // If no architecture detected from filename, leave it nil
-            // The interactive prompt will default to "x86_64, arm64" (universal)
+            // The interactive prompt will default to "arm64, x86_64" (universal)
         }
 
         // connect to the repo
@@ -664,7 +664,7 @@ struct MunkiImport: AsyncParsableCommand {
                     if let array = pkginfo[key] as? [String] {
                         defaultValue = array.joined(separator: ", ")
                     } else {
-                        defaultValue = "x86_64, arm64"
+                        defaultValue = "arm64, x86_64"
                     }
                 } else {
                     defaultValue = pkginfo[key] as? String ?? ""
