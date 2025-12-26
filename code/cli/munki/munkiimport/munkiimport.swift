@@ -460,16 +460,19 @@ struct MunkiImport: AsyncParsableCommand {
         }
 
         // Auto-detect architecture from filename if not already set in pkginfo
-        // This handles cases where the package itself doesn't specify architecture
-        // but the filename contains indicators like "x64", "arm64", "intel", etc.
+        // Only set supported_architectures for Intel-only packages
+        // Omit for universal/Apple Silicon (which is now the default)
         if pkginfo["supported_architectures"] == nil {
             if let detectedArch = detectArchitectureFromFilename(installerItem) {
-                pkginfo["supported_architectures"] = detectedArch
-                let archString = detectedArch.joined(separator: ", ")
-                print("Detected architecture from filename: \(archString)")
+                // Only set if it's explicitly Intel-only
+                if detectedArch == ["x86_64"] {
+                    pkginfo["supported_architectures"] = detectedArch
+                    print("Detected Intel-only architecture from filename: x86_64")
+                }
+                // For arm64 or other archs detected, omit the key (treat as universal)
+                // This is correct for modern Apple Silicon apps which are often universal
             }
-            // If no architecture detected from filename, leave it nil
-            // The interactive prompt will default to "x86_64, arm64" (universal)
+            // If no architecture detected from filename, leave it nil (universal)
         }
 
         // connect to the repo
@@ -649,7 +652,6 @@ struct MunkiImport: AsyncParsableCommand {
                 ("Developer", "developer", "String"),
                 ("Unattended install", "unattended_install", "Bool"),
                 ("Unattended uninstall", "unattended_uninstall", "Bool"),
-                ("Architecture(s)", "supported_architectures", "StringArray"),
             ]
             // Fields where empty string means "remove/don't include"
             let optionalStringFields: Set<String> = ["display_name", "description", "category", "developer"]
@@ -659,20 +661,12 @@ struct MunkiImport: AsyncParsableCommand {
                 var defaultValue = ""
                 if kind == "Bool" {
                     defaultValue = String(pkginfo[key] as? Bool ?? false).capitalized
-                } else if kind == "StringArray" {
-                    if let array = pkginfo[key] as? [String] {
-                        defaultValue = array.joined(separator: ", ")
-                    } else {
-                        defaultValue = "x86_64, arm64"
-                    }
                 } else {
                     defaultValue = pkginfo[key] as? String ?? ""
                 }
                 if let newValue = getInput(prompt: prompt, defaultText: defaultValue) {
                     if kind == "Bool" {
                         pkginfo[key] = newValue.lowercased().hasPrefix("t")
-                    } else if kind == "StringArray" {
-                        pkginfo[key] = newValue.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
                     } else {
                         // For optional string fields, remove the key if empty
                         if newValue.isEmpty && optionalStringFields.contains(key) {
