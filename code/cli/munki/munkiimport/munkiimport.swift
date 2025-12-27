@@ -650,7 +650,6 @@ struct MunkiImport: AsyncParsableCommand {
                 ("Developer", "developer", "String"),
                 ("Unattended install", "unattended_install", "Bool"),
                 ("Unattended uninstall", "unattended_uninstall", "Bool"),
-                ("Architecture(s)", "supported_architectures", "StringArray"),
             ]
             // Fields where empty string means "remove/don't include"
             let optionalStringFields: Set<String> = ["display_name", "description", "category", "developer"]
@@ -660,20 +659,12 @@ struct MunkiImport: AsyncParsableCommand {
                 var defaultValue = ""
                 if kind == "Bool" {
                     defaultValue = String(pkginfo[key] as? Bool ?? false).capitalized
-                } else if kind == "StringArray" {
-                    if let array = pkginfo[key] as? [String] {
-                        defaultValue = array.joined(separator: ", ")
-                    } else {
-                        defaultValue = "arm64, x86_64"
-                    }
                 } else {
                     defaultValue = pkginfo[key] as? String ?? ""
                 }
                 if let newValue = getInput(prompt: prompt, defaultText: defaultValue) {
                     if kind == "Bool" {
                         pkginfo[key] = newValue.lowercased().hasPrefix("t")
-                    } else if kind == "StringArray" {
-                        pkginfo[key] = newValue.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
                     } else {
                         // For optional string fields, remove the key if empty
                         if newValue.isEmpty && optionalStringFields.contains(key) {
