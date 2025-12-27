@@ -259,7 +259,7 @@ PYTHONVERSION=$PYTHONVERSION.$PYTHONSVNREV
 # get a pseudo-svn revision number for the metapackage
 MPKGVERSION=$MUNKIVERS.$MPKGSVNREV
 
-MPKG="$OUTPUTDIR/munkitools-$MPKGVERSION.pkg"
+MPKG="$OUTPUTDIR/MunkiTools-$MPKGVERSION.pkg"
 
 
 if [ "$(id -u)" -ne 0 ]; then
