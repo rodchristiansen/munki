@@ -317,7 +317,7 @@ if bash code/tools/make_swift_munki_pkg.sh $BUILD_OPTS 2>&1 | tee "$LOG_FILE"; t
         echo -e "  Location: $PKG_PATH"
         
         # Get version info
-        VERSION=$(echo "$PKG_NAME" | sed 's/munkitools-//;s/.pkg//')
+        VERSION=$(echo "$PKG_NAME" | sed 's/[Mm]unki[Tt]ools-//;s/.pkg//')
         echo -e "  Version: $VERSION"
         
         # Verify signature if signed
