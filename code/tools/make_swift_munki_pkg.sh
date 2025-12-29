@@ -358,6 +358,26 @@ fi
 # reset build number in version.swift
 mv "${VERSIONFILE}.bak" "${VERSIONFILE}"
 
+# Sign all CLI tool binaries once upfront to ensure identical signatures across packages
+if [ "$APPSIGNINGCERT" != "" ]; then
+    echo "Signing CLI tool binaries..."
+    for BINARY in "$MUNKIROOT/code/build/binaries"/*; do
+        if [ -f "$BINARY" ] && [ -x "$BINARY" ]; then
+            BINARY_NAME=$(basename "$BINARY")
+            echo "  Signing $BINARY_NAME..."
+            /usr/bin/codesign -f -s "$APPSIGNINGCERT" \
+                --preserve-metadata=entitlements \
+                --options runtime --timestamp --verbose \
+                "$BINARY"
+            SIGNING_RESULT="$?"
+            if [ "$SIGNING_RESULT" -ne 0 ]; then
+                echo "Error signing $BINARY_NAME: $SIGNING_RESULT"
+                exit 2
+            fi
+        fi
+    done
+fi
+
 # Build Managed Software Center.
 echo "Building Managed Software Center.xcodeproj..."
 pushd "$MUNKIROOT/code/apps/Managed Software Center" > /dev/null
@@ -472,36 +492,10 @@ mkdir -m 755 "$COREROOT/usr/local/munki/libexec"
 for TOOL in removepackages managedsoftwareupdate
 do
     cp -X "$MUNKIROOT/code/build/binaries/$TOOL" "$COREROOT/usr/local/munki/" 2>&1
-    # sign tool
-    if [ "$APPSIGNINGCERT" != "" ]; then
-        echo "Signing $TOOL..."
-        /usr/bin/codesign -f -s "$APPSIGNINGCERT" \
-            --preserve-metadata=entitlements \
-            --options runtime --timestamp --verbose \
-            "$COREROOT/usr/local/munki/$TOOL"
-        SIGNING_RESULT="$?"
-        if [ "$SIGNING_RESULT" -ne 0 ]; then
-            echo "Error signing $TOOL: $SIGNING_RESULT"
-            exit 2
-        fi
-    fi
 done
 for TOOL in authrestartd launchapp logouthelper precache_agent
 do
     cp -X "$MUNKIROOT/code/build/binaries/$TOOL" "$COREROOT/usr/local/munki/libexec/" 2>&1
-    # sign tool
-    if [ "$APPSIGNINGCERT" != "" ]; then
-        echo "Signing $TOOL..."
-        /usr/bin/codesign -f -s "$APPSIGNINGCERT" \
-            --preserve-metadata=entitlements \
-            --options runtime --timestamp --verbose \
-            "$COREROOT/usr/local/munki/libexec/$TOOL"
-        SIGNING_RESULT="$?"
-        if [ "$SIGNING_RESULT" -ne 0 ]; then
-            echo "Error signing $TOOL: $SIGNING_RESULT"
-            exit 2
-        fi
-    fi
 done
 
 # Set permissions.
@@ -547,21 +541,12 @@ mkdir -m 755 "$ADMINROOT/usr/local"
 mkdir -m 755 "$ADMINROOT/usr/local/munki"
 # Copy command line admin utilities.
 # edit this if list of tools changes!
-for TOOL in makecatalogs makepkginfo manifestutil munkiimport iconimporter repoclean 
+for TOOL in makecatalogs makepkginfo manifestutil munkiimport iconimporter repoclean munkipkg
 do
-    cp -X "$MUNKIROOT/code/build/binaries/$TOOL" "$ADMINROOT/usr/local/munki/" 2>&1
-    # sign tool
-    if [ "$APPSIGNINGCERT" != "" ]; then
-        echo "Signing $TOOL..."
-        /usr/bin/codesign -f -s "$APPSIGNINGCERT" \
-            --preserve-metadata=entitlements \
-            --options runtime --timestamp --verbose \
-            "$ADMINROOT/usr/local/munki/$TOOL"
-        SIGNING_RESULT="$?"
-        if [ "$SIGNING_RESULT" -ne 0 ]; then
-            echo "Error signing $TOOL: $SIGNING_RESULT"
-            exit 2
-        fi
+    if [ -f "$MUNKIROOT/code/build/binaries/$TOOL" ]; then
+        cp -X "$MUNKIROOT/code/build/binaries/$TOOL" "$ADMINROOT/usr/local/munki/" 2>&1
+    else
+        echo "Warning: $TOOL not found in binaries directory, skipping..."
     fi
 done
 # Set permissions.
@@ -708,16 +693,6 @@ chmod 644 "$LAUNCHDROOT/Library/LaunchDaemons/"*
 for TOOL in installhelper
 do
 	cp -X "$MUNKIROOT/code/build/binaries/$TOOL" "$LAUNCHDROOT/usr/local/munki/libexec/" 2>&1
-    # sign tool
-    if [ "$APPSIGNINGCERT" != "" ]; then
-        echo "Signing $TOOL..."
-        /usr/bin/codesign -f -s "$APPSIGNINGCERT" --options runtime --timestamp --verbose "$LAUNCHDROOT/usr/local/munki/libexec/$TOOL"
-        SIGNING_RESULT="$?"
-        if [ "$SIGNING_RESULT" -ne 0 ]; then
-            echo "Error signing $TOOL: $SIGNING_RESULT"
-            exit 2
-        fi
-    fi
 done
 # Set permissions.
 chmod -R go-w "$LAUNCHDROOT/usr/local/munki"
@@ -761,15 +736,9 @@ chmod 644 "$APPUSAGEROOT/Library/LaunchDaemons/"*
 for TOOL in appusaged app_usage_monitor installhelper
 do
 	cp -X "$MUNKIROOT/code/build/binaries/$TOOL" "$APPUSAGEROOT/usr/local/munki/libexec/" 2>&1
-    # sign tool
-    if [ "$APPSIGNINGCERT" != "" ]; then
-        echo "Signing $TOOL..."
-        /usr/bin/codesign -f -s "$APPSIGNINGCERT" --options runtime --timestamp --verbose "$APPUSAGEROOT/usr/local/munki/libexec/$TOOL"
-        SIGNING_RESULT="$?"
-        if [ "$SIGNING_RESULT" -ne 0 ]; then
-            echo "Error signing $TOOL: $SIGNING_RESULT"
-            exit 2
-        fi
+    # Sync installhelper mtime to match launchd package for identical BOM metadata
+    if [ "$TOOL" == "installhelper" ]; then
+        touch -r "$LAUNCHDROOT/usr/local/munki/libexec/installhelper" "$APPUSAGEROOT/usr/local/munki/libexec/installhelper"
     fi
 done
 # Set permissions.
