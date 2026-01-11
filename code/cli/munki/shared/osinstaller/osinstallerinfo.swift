@@ -104,14 +104,18 @@ func getInfoFromInstallMacOSApp(_ appPath: String) throws -> PlistDict {
 func generateInstallableCondition(_ models: [String]) -> String {
     var predicates = [String]()
     let boardIDs = models.filter { $0.hasPrefix("Mac-") }
-    let deviceIDs = models.filter { !$0.hasPrefix("Mac-") }
+    // Model identifiers like "Mac14,2", "MacBookPro18,1" should be checked
+    // against machine_model (hw.model), not device_id (target-sub-type).
+    // device_id returns internal board identifiers like "J616sAP" which don't
+    // match the SupportedDeviceModels list from macOS installers.
+    let modelIDs = models.filter { !$0.hasPrefix("Mac-") }
     if !boardIDs.isEmpty {
-        let boardIDList = boardIDs.joined(separator: ", ")
+        let boardIDList = boardIDs.map { "\"\($0)\"" }.joined(separator: ", ")
         predicates.append("board_id IN {\(boardIDList)}")
     }
-    if !deviceIDs.isEmpty {
-        let deviceIDList = deviceIDs.joined(separator: ", ")
-        predicates.append("device_id IN {\(deviceIDList)}")
+    if !modelIDs.isEmpty {
+        let modelIDList = modelIDs.map { "\"\($0)\"" }.joined(separator: ", ")
+        predicates.append("machine_model IN {\(modelIDList)}")
     }
     return predicates.joined(separator: " OR ")
 }
