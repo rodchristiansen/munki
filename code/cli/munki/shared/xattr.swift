@@ -31,8 +31,15 @@ func listXattrs(atPath path: String) throws -> [String] {
         throw MunkiError("Could not get buffer length for xattrs for \(path): \(errString)")
     }
 
+    // Return empty list if no xattrs
+    guard bufLength > 0 else {
+        return [String]()
+    }
+
     let buf = UnsafeMutablePointer<Int8>.allocate(capacity: bufLength)
-    guard listxattr(path, buf, bufLength, 0) != -1 else {
+    defer { buf.deallocate() }
+    
+    guard listxattr(path, buf, bufLength, XATTR_NOFOLLOW) != -1 else {
         let errString = String(utf8String: strerror(errno)) ?? String(errno)
         throw MunkiError("Could not get list of xattrs for \(path): \(errString)")
     }
@@ -84,12 +91,22 @@ func removeQuarantineXattrFromItem(_ path: String) throws {
 
 /// Removes com.apple.quarantine xattr from a path, recursively if needed
 func removeQuarantineXattrsRecursively(_ path: String) throws {
-    try removeQuarantineXattrFromItem(path)
+    do {
+        try removeQuarantineXattrFromItem(path)
+    } catch {
+        // Log but don't fail for the root item
+        mLog.debug("Could not remove quarantine xattr from \(path): \(error.localizedDescription)")
+    }
     if pathIsDirectory(path) {
         let dirEnum = FileManager.default.enumerator(atPath: path)
         while let item = dirEnum?.nextObject() as? String {
             let itempath = (path as NSString).appendingPathComponent(item)
-            try removeQuarantineXattrFromItem(itempath)
+            do {
+                try removeQuarantineXattrFromItem(itempath)
+            } catch {
+                // Log but continue processing other items
+                mLog.debug("Could not remove quarantine xattr from \(itempath): \(error.localizedDescription)")
+            }
         }
     }
 }
