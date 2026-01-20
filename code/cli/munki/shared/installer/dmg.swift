@@ -172,8 +172,10 @@ func copyItemsFromMountpoint(_ mountpoint: String, itemList: [PlistDict]) async 
         do {
             try removeQuarantineXattrsRecursively(tempDestinationPath)
         } catch {
-            display.error(
-                "Failed to remove quarantine xattr for \(destinationPath): \(error.localizedDescription)")
+            // This shouldn't fail now that removeQuarantineXattrsRecursively handles errors internally
+            // But log just in case
+            display.debug(
+                "Unexpected error during quarantine xattr removal for \(destinationPath): \(error.localizedDescription)")
         }
         // set desired permissions for item
         let permsresult = setPermissions(item, path: tempDestinationPath)
