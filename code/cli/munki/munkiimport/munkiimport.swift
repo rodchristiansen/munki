@@ -730,6 +730,17 @@ struct MunkiImport: AsyncParsableCommand {
             } catch let error as MunkiError {
                 printStderr("Error importing \(iconPath): \(error.description)")
             }
+        } else if !munkiImportOptions.extractIcon,
+                  await !iconIsInRepo(repo, pkginfo: pkginfo),
+                  !munkiImportOptions.nointeractive
+        {
+            print("No existing product icon found.")
+            print("Attempt to create a product icon? [y/N] ", terminator: "")
+            if let answer = readLine(),
+               answer.lowercased().hasPrefix("y")
+            {
+                munkiImportOptions.extractIcon = true
+            }
         }
         if munkiImportOptions.extractIcon {
             print("Attempting to extract and upload icon...")
