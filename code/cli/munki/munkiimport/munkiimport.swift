@@ -731,7 +731,8 @@ struct MunkiImport: AsyncParsableCommand {
                 printStderr("Error importing \(iconPath): \(error.description)")
             }
         } else if !munkiImportOptions.extractIcon,
-                  await !iconIsInRepo(repo, pkginfo: pkginfo)
+                  await !iconIsInRepo(repo, pkginfo: pkginfo),
+                  !munkiImportOptions.nointeractive
         {
             print("No existing product icon found.")
             print("Attempt to create a product icon? [y/N] ", terminator: "")
