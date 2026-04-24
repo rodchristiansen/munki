@@ -214,7 +214,8 @@ func activeDisplaySleepAssertion() -> Bool {
 ///     force: bool, default false, forcefully notify user regardless
 ///     of LastNotifiedDate.
 func notifyUserOfUpdates(force: Bool = false) {
-    if getConsoleUser() == "loginwindow" {
+    let consoleUser = getConsoleUser()
+    if consoleUser == "loginwindow" || consoleUser.isEmpty {
         // someone is logged in, but we're sitting at the loginwindow
         // due to to fast user switching so do nothing
         munkiLog("Skipping user notification because we are at the loginwindow.")
@@ -340,21 +341,23 @@ func doRestart(shutdown: Bool = false) {
 /// Args:
 ///    doAppleUpdates: Bool. If true, install Apple updates
 ///    onlyUnattended:  Bool. If true, only do unattended_(un)install items.
+///    considerBlockingApps: Bool. If true, consider blocking applications
 ///
 /// Returns:
 ///    PostAction - one of .none, .logout, .restart, .shutdown
-func doInstallTasks(doAppleUpdates: Bool = false, onlyUnattended: Bool = false) async -> PostAction {
-    if !onlyUnattended {
-        // first, clear the last notified date so we can get notified of new
-        // changes after this round of installs
-        clearLastNotifiedDate()
-    }
-
+func doInstallTasks(
+    doAppleUpdates: Bool = false,
+    onlyUnattended: Bool = false,
+    considerBlockingApps: Bool = true
+) async -> PostAction {
     var munkiItemsRestartAction = PostAction.none
 
     if munkiUpdatesAvailable() > 0 {
         // install Munki updates
-        munkiItemsRestartAction = await doInstallsAndRemovals(onlyUnattended: onlyUnattended)
+        munkiItemsRestartAction = await doInstallsAndRemovals(
+            onlyUnattended: onlyUnattended,
+            considerBlockingApps: considerBlockingApps
+        )
         if !onlyUnattended {
             if munkiUpdatesContainItemWithInstallerType("startosinstall") {
                 Report.shared.save()

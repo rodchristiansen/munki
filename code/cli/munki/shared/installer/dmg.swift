@@ -169,14 +169,7 @@ func copyItemsFromMountpoint(_ mountpoint: String, itemList: [PlistDict]) async 
         }
         // remove com.apple.quarantine xattr since `man ditto` lies and doesn't
         // seem to actually always remove it
-        do {
-            try removeQuarantineXattrsRecursively(tempDestinationPath)
-        } catch {
-            // This shouldn't fail now that removeQuarantineXattrsRecursively handles errors internally
-            // But log just in case
-            display.debug(
-                "Unexpected error during quarantine xattr removal for \(destinationPath): \(error.localizedDescription)")
-        }
+        removeQuarantineXattrsRecursively(tempDestinationPath)
         // set desired permissions for item
         let permsresult = setPermissions(item, path: tempDestinationPath)
         if permsresult != 0 {

@@ -151,9 +151,9 @@ func processInstall(
 
     // have we processed this already?
     if let processedInstalls = installInfo["processed_installs"] as? [String],
-       processedInstalls.contains(manifestItemName)
+       processedInstalls.contains(manifestItemName) || processedInstalls.contains(manifestItemNameWithoutVersion)
     {
-        display.debug1("\(manifestItemName) has already been processed for install.")
+        display.debug1("\(manifestItemNameWithoutVersion) has already been processed for install.")
         return true
     }
     if let processedUninstalls = installInfo["processed_uninstalls"] as? [String],
@@ -380,6 +380,8 @@ func processInstall(
             "display_name_staged", // used w/ stage_os_installer
             "description_staged",
             "installed_size_staged",
+            "blocking_applications_manual_quit_only",
+            "blocking_applications_quit_script",
         ]
 
         if isOptionalInstall {
@@ -519,7 +521,7 @@ func processInstall(
     if !isManagedUpdate {
         display.debug2("Adding \(manifestItemName) to the list of processed installs")
         var processedInstalls = installInfo["processed_installs"] as? [String] ?? []
-        processedInstalls.append(manifestItemName)
+        processedInstalls.append(manifestItemNameWithoutVersion)
         installInfo["processed_installs"] = processedInstalls
     }
     return true
@@ -758,6 +760,8 @@ func processOptionalInstall(
         "minimum_os_version",
         "update_available",
         "localized_strings",
+        "blocking_applications_manual_quit_only",
+        "blocking_applications_quit_script",
     ]
     for key in optionalKeys {
         processedItem[key] = pkginfo[key]
@@ -998,6 +1002,8 @@ func processRemoval(
         "developer",
         "icon_name",
         "PayloadIdentifier",
+        "blocking_applications_manual_quit_only",
+        "blocking_applications_quit_script",
     ]
     for key in optionalKeys {
         processedItem[key] = uninstallItem[key]
