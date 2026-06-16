@@ -193,6 +193,12 @@ func getManifest(_ name: String, suppressErrors: Bool = false) throws -> String 
 }
 
 /// Gets the primary client manifest from the server.
+/// Resolves the configured client identifier and tries it first. If that
+/// manifest is missing (HTTP 404) it falls through hostname/serial resolution
+/// (when no explicit identifier was set) and finally the catch-all "Orphaned"
+/// and "site_default" manifests. This means a device whose specific manifest
+/// doesn't exist on the server degrades to a known-good fallback instead of
+/// failing the entire run with no managed software.
 /// Can throw all the same errors as getManifest
 func getPrimaryManifest(alternateIdentifier: String? = nil) throws -> String {
     var clientIdentifier = ""
@@ -206,13 +212,14 @@ func getPrimaryManifest(alternateIdentifier: String? = nil) throws -> String {
         clientIdentifier = pref("ClientIdentifier") as? String ?? ""
     }
 
-    var manifest = ""
+    // Build the ordered list of identifiers to try.
+    var identifiers = [String]()
     if !clientIdentifier.isEmpty {
-        manifest = try getManifest(clientIdentifier)
+        // An explicit identifier is configured (the common case) — try it first.
+        identifiers.append(clientIdentifier)
     } else {
-        // no clientIdentifier specified. Try a variety of possible identifiers
+        // No clientIdentifier specified. Try a variety of possible identifiers.
         display.detail("No client identifier specified. Trying default manifest resolution...")
-        var identifiers = [String]()
 
         let uname_hostname = hostname()
         identifiers.append(uname_hostname) // append hostname
@@ -225,35 +232,63 @@ func getPrimaryManifest(alternateIdentifier: String? = nil) throws -> String {
         if sn != "UNKNOWN" {
             identifiers.append(sn)
         }
-        identifiers.append("Orphaned")
-        identifiers.append("site_default")
+    }
+    // Catch-all fallbacks: a 404 on the primary identifier degrades to these
+    // rather than failing the run with no manifest at all.
+    identifiers.append("Orphaned")
+    identifiers.append("site_default")
 
-        for (index, identifier) in identifiers.enumerated() {
-            display.detail("Requesting manifest \(identifier)...")
-            do {
-                manifest = try getManifest(identifier, suppressErrors: true)
-            } catch {
-                if error is ManifestError,
-                   index + 1 < identifiers.count // not last attempt
-                {
-                    display.detail("Manifest \(identifier) not found...")
-                    continue // try the next identifier
-                } else {
-                    // just rethrow it
-                    throw error
-                }
+    var manifest = ""
+    var resolvedIdentifier = ""
+    for (index, identifier) in identifiers.enumerated() {
+        let isLastAttempt = index + 1 >= identifiers.count
+        display.detail("Requesting manifest \(identifier)...")
+        do {
+            manifest = try getManifest(identifier, suppressErrors: true)
+        } catch let ManifestError.http(errorCode, description) where errorCode == 404 {
+            // Manifest genuinely isn't on the server — fall through to the next
+            // identifier (and ultimately Orphaned/site_default).
+            if isLastAttempt {
+                // Nothing left to try: surface the 404 with the identifier, since
+                // getManifest suppressed its own error output.
+                display.error(
+                    "Could not retrieve manifest \(identifier) from the server. HTTP error \(errorCode): \(description)")
+                throw ManifestError.http(errorCode: errorCode, description: description)
             }
-            if !manifest.isEmpty {
-                clientIdentifier = identifier
-                break
+            if identifier == clientIdentifier {
+                // The explicitly-configured manifest is missing; degrading to a
+                // catch-all fallback is noteworthy.
+                display.warning(
+                    "Configured manifest \(identifier) not found on server (HTTP 404); falling back...")
+            } else {
+                // Routine probing of hostname/serial/catch-all candidates — quiet.
+                display.detail("Manifest \(identifier) not found...")
             }
+            continue
+        } catch {
+            // Non-404 error (connection, auth, 5xx): log which identifier failed
+            // (getManifest suppressed its own output under suppressErrors) and
+            // surface it instead of masking a transient/server problem behind the
+            // fallback chain.
+            display.error(
+                "Could not retrieve manifest \(identifier) from the server: \(error.localizedDescription)")
+            throw error
+        }
+        if !manifest.isEmpty {
+            resolvedIdentifier = identifier
+            break
         }
     }
 
     // record info and return the path to the manifest
     Manifests.shared.set(PRIMARY_MANIFEST_TAG, path: manifest)
-    Report.shared.record(clientIdentifier, to: "ManifestName")
-    display.detail("Using primary manifest: \(clientIdentifier)")
+    Report.shared.record(resolvedIdentifier, to: "ManifestName")
+    if !clientIdentifier.isEmpty, resolvedIdentifier != clientIdentifier {
+        display.warning(
+            "Primary manifest \(clientIdentifier) unavailable; using fallback manifest \(resolvedIdentifier)")
+    } else {
+        display.detail("Using primary manifest: \(resolvedIdentifier)")
+    }
     return manifest
 }
 
