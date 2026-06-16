@@ -249,14 +249,29 @@ func getPrimaryManifest(alternateIdentifier: String? = nil) throws -> String {
             // Manifest genuinely isn't on the server — fall through to the next
             // identifier (and ultimately Orphaned/site_default).
             if isLastAttempt {
+                // Nothing left to try: surface the 404 with the identifier, since
+                // getManifest suppressed its own error output.
+                display.error(
+                    "Could not retrieve manifest \(identifier) from the server. HTTP error \(errorCode): \(description)")
                 throw ManifestError.http(errorCode: errorCode, description: description)
             }
-            display.warning(
-                "Manifest \(identifier) not found on server (HTTP 404); trying fallback manifest...")
+            if identifier == clientIdentifier {
+                // The explicitly-configured manifest is missing; degrading to a
+                // catch-all fallback is noteworthy.
+                display.warning(
+                    "Configured manifest \(identifier) not found on server (HTTP 404); falling back...")
+            } else {
+                // Routine probing of hostname/serial/catch-all candidates — quiet.
+                display.detail("Manifest \(identifier) not found...")
+            }
             continue
         } catch {
-            // Non-404 error (connection, auth, 5xx): surface it instead of
-            // masking a transient or server-side problem behind the fallback.
+            // Non-404 error (connection, auth, 5xx): log which identifier failed
+            // (getManifest suppressed its own output under suppressErrors) and
+            // surface it instead of masking a transient/server problem behind the
+            // fallback chain.
+            display.error(
+                "Could not retrieve manifest \(identifier) from the server: \(error.localizedDescription)")
             throw error
         }
         if !manifest.isEmpty {
