@@ -3,9 +3,12 @@
 export PATH=/usr/bin:/bin:/usr/sbin:/sbin
 
 # relaunch MSC.app if it was running before we upgraded it
-MSC_APP="/Applications/Software Center.app"
+MSC_APP="/Applications/Managed Software Center.app"
 
 if [ "$3" == "/" ]; then
+    # transition: remove the previously shipped renamed bundle so both apps
+    # don't linger side by side
+    rm -rf "/Applications/Software Center.app"
     if [ -e /tmp/com.googlecode.munki.relaunch_msc_app ] ; then
         FRONTMOST=$(cat /tmp/com.googlecode.munki.relaunch_msc_app)
         rm /tmp/com.googlecode.munki.relaunch_msc_app
