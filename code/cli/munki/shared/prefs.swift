@@ -68,6 +68,7 @@ let DEFAULT_PREFS: [String: Any] = [
     "SuppressAutoInstall": false,
     "SuppressLoginwindowInstall": false,
     "SuppressStopButtonOnInstall": false,
+    "SuppressTransientDownloadWarnings": true,
     "SuppressUserNotification": false,
     "UnattendedAppleUpdates": false,
     "UseClientCertificate": false,
@@ -124,6 +125,7 @@ let CONFIG_KEY_NAMES = [
     "SuppressAutoInstall",
     "SuppressLoginwindowInstall",
     "SuppressStopButtonOnInstall",
+    "SuppressTransientDownloadWarnings",
     "SuppressUserNotification",
     // "UnattendedAppleUpdates", // since we don't support this any longer, no need to report its value
     "UseClientCertificate",

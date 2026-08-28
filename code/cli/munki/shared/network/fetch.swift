@@ -35,6 +35,34 @@ enum FetchError: Error {
     case verification
 }
 
+extension FetchError {
+    /// NSURLError codes treated as transient network conditions.
+    static let transientNetworkErrorCodes: Set<Int> = [
+        NSURLErrorTimedOut, // -1001
+        NSURLErrorCannotFindHost, // -1003
+        NSURLErrorCannotConnectToHost, // -1004
+        NSURLErrorNetworkConnectionLost, // -1005
+        NSURLErrorDNSLookupFailed, // -1006
+        NSURLErrorNotConnectedToInternet, // -1009
+    ]
+
+    /// True when the download could not complete because of a transient network
+    /// condition. Nothing is wrong with the item, the repo or the machine: the
+    /// next run simply tries again. Routine on laptops that sleep, roam between
+    /// networks, or leave the local network mid-download.
+    ///
+    /// Deliberately keyed on the NSURLError code rather than the description.
+    /// Insufficient disk space and other filesystem problems are rethrown as
+    /// `.download(errorCode: -1, ...)` and reach the same call sites carrying an
+    /// identical "Download failed: " prefix, so matching on message text would
+    /// silently hide real, actionable failures. TLS failures also surface as
+    /// `.connection` but with SSL error codes, and are likewise not transient.
+    var isTransientNetworkFailure: Bool {
+        guard case let .connection(errorCode, _) = self else { return false }
+        return FetchError.transientNetworkErrorCodes.contains(errorCode)
+    }
+}
+
 extension FetchError: LocalizedError {
     var errorDescription: String? {
         switch self {
