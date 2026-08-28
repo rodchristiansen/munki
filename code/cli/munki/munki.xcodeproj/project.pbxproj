@@ -413,6 +413,7 @@
 		C09616C92DEE6E1300281B6B /* tempfileutils.swift in Sources */ = {isa = PBXBuildFile; fileRef = C058EF282DCD11E1002775E0 /* tempfileutils.swift */; };
 		C0AD96022F3E58C50029A293 /* manifestutil.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0AD95F82F3E58C50029A293 /* manifestutil.swift */; };
 		C0AD96032F3E58C50029A293 /* MUcatalogs.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0AD95F92F3E58C50029A293 /* MUcatalogs.swift */; };
+		C0AD96A02F3E58C50029A293 /* MUconvert.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0AD95A02F3E58C50029A293 /* MUconvert.swift */; };
 		C0AD96042F3E58C50029A293 /* MUdisplayManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0AD95FA2F3E58C50029A293 /* MUdisplayManifest.swift */; };
 		C0AD96052F3E58C50029A293 /* MUfind.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0AD95FB2F3E58C50029A293 /* MUfind.swift */; };
 		C0AD96062F3E58C50029A293 /* MUlistManifests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0AD95FC2F3E58C50029A293 /* MUlistManifests.swift */; };
@@ -873,6 +874,7 @@
 		C0AD95F72F3E58C50029A293 /* manifestutil.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = manifestutil.entitlements; sourceTree = "<group>"; };
 		C0AD95F82F3E58C50029A293 /* manifestutil.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = manifestutil.swift; sourceTree = "<group>"; };
 		C0AD95F92F3E58C50029A293 /* MUcatalogs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MUcatalogs.swift; sourceTree = "<group>"; };
+		C0AD95A02F3E58C50029A293 /* MUconvert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MUconvert.swift; sourceTree = "<group>"; };
 		C0AD95FA2F3E58C50029A293 /* MUdisplayManifest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MUdisplayManifest.swift; sourceTree = "<group>"; };
 		C0AD95FB2F3E58C50029A293 /* MUfind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MUfind.swift; sourceTree = "<group>"; };
 		C0AD95FC2F3E58C50029A293 /* MUlistManifests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MUlistManifests.swift; sourceTree = "<group>"; };
@@ -1415,6 +1417,7 @@
 				C0AD95F72F3E58C50029A293 /* manifestutil.entitlements */,
 				C0AD95F82F3E58C50029A293 /* manifestutil.swift */,
 				C0AD95F92F3E58C50029A293 /* MUcatalogs.swift */,
+				C0AD95A02F3E58C50029A293 /* MUconvert.swift */,
 				C0AD95FA2F3E58C50029A293 /* MUdisplayManifest.swift */,
 				C0AD95FB2F3E58C50029A293 /* MUfind.swift */,
 				C0AD95FC2F3E58C50029A293 /* MUlistManifests.swift */,
@@ -2193,6 +2196,7 @@
 				C05DB2222DAC98970081FACD /* fileutils.swift in Sources */,
 				C0AD96022F3E58C50029A293 /* manifestutil.swift in Sources */,
 				C0AD96032F3E58C50029A293 /* MUcatalogs.swift in Sources */,
+				C0AD96A02F3E58C50029A293 /* MUconvert.swift in Sources */,
 				C0AD96042F3E58C50029A293 /* MUdisplayManifest.swift in Sources */,
 				C0AD96052F3E58C50029A293 /* MUfind.swift in Sources */,
 				C0AD96062F3E58C50029A293 /* MUlistManifests.swift in Sources */,
