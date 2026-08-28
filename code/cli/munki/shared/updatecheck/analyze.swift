@@ -208,7 +208,7 @@ func processInstall(
     //  requires can be a one to many relationship.
     //
     //  The second type of relationship is 'update_for'.
-    //  This signifies that that current package should be considered an update
+    //  This signifies that the current package should be considered an update
     //  for the packages listed in the 'update_for' array. When processing a
     //  package, we look through the catalogs for other packages that declare
     //  they are updates for the current package and install them if needed.
@@ -246,9 +246,9 @@ func processInstall(
 
     var processedItem = PlistDict()
     processedItem["name"] = name
-    let displayName = pkginfo["display_name"] as? String ?? name
+    let displayName = pkginfo.getString(for: "display_name", fallback: name)
     processedItem["display_name"] = displayName
-    processedItem["description"] = pkginfo["description"] as? String ?? ""
+    processedItem["description"] = pkginfo.getString(for: "description")
     processedItem["localized_strings"] = pkginfo["localized_strings"]
     processedItem["developer"] = pkginfo["developer"]
     processedItem["icon_name"] = pkginfo["icon_name"]

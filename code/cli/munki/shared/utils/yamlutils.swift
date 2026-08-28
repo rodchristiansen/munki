@@ -38,9 +38,13 @@ import Yams
 /// Usage:
 ///   ```swift
 ///   // Instead of: item["minimum_os_version"] as? String
-///   // Use: getString(from: item, forKey: "minimum_os_version")
+///   // Use: coercedString(from: item, forKey: "minimum_os_version")
 ///   ```
-func getString(from dict: [String: Any], forKey key: String) -> String? {
+///
+/// Named `coercedString` rather than `getString` to avoid shadowing the
+/// `Dictionary.getString(for:fallback:)` extension upstream added in 7.2.0,
+/// which has different semantics (non-optional, no numeric coercion).
+func coercedString(from dict: [String: Any], forKey key: String) -> String? {
     guard let value = dict[key] else { return nil }
     
     // Try String first (most common case)
@@ -74,7 +78,7 @@ extension Dictionary where Key == String, Value == Any {
     /// Get a string value, automatically converting numeric types to strings.
     /// This allows YAML files to omit quotes on version-like values.
     func stringValue(forKey key: String) -> String? {
-        return getString(from: self, forKey: key)
+        return coercedString(from: self, forKey: key)
     }
 }
 

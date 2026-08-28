@@ -367,6 +367,9 @@
 /* Restart Required title */
 "Restart Required" = "再起動が必要です";
 
+/* Restrict update notifications checkbox label */
+"Restrict update notifications to selected hours" = "アップデート通知を指定した時間帯に制限する";
+
 /* managedsoftwareupdate message */
 "Retrieving list of software for this machine..." = "このコンピューターのソフトウェアリストを取得中…";
 
