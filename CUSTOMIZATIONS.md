@@ -197,3 +197,53 @@ code/cli/munki/shared/version.swift
 - [Upstream Sync Guide](.github/copilot-instructions.md) - Detailed sync history
 - [munkiimport Customizations](code/cli/munki/munkiimport/customizations.md) - Full feature documentation
 - [Official Munki Wiki](https://github.com/munki/munki/wiki)
+
+---
+
+## Trap: the CLI Xcode project drops fork-only files
+
+`code/cli/munki/munki.xcodeproj/project.pbxproj` used to use Xcode's
+**synchronized folder groups** (`PBXFileSystemSynchronizedRootGroup`), which
+compile every file in a directory automatically — so fork-only sources were
+picked up without being listed anywhere.
+
+**Upstream v7.3.0 replaced that with explicit per-file references**, enumerating
+only upstream's own files. Accepting upstream's `project.pbxproj` therefore
+silently drops every fork-only source: the file stays on disk, git shows no
+conflict, and the target simply stops compiling it. The failure surfaces later as
+`cannot find '<Type>' in scope` — in the v7.3.0 sync it was
+`manifestutil.swift:77: cannot find 'Convert' in scope`, because
+`manifestutil/MUconvert.swift` was no longer a member of the `manifestutil`
+target.
+
+**After every upstream sync, check that no fork-only source fell out:**
+
+```bash
+cd code/cli/munki
+find . -name '*.swift' -not -path './munkipkg/*' -not -path '*/.build/*' | while read -r f; do
+  grep -q "$(basename "$f")" munki.xcodeproj/project.pbxproj || echo "MISSING: $f"
+done
+```
+
+Fork-only CLI sources that must stay in the project:
+
+| File | Target | Provides |
+|---|---|---|
+| `manifestutil/MUconvert.swift` | `manifestutil` | `convert` subcommand (YAML ⇄ plist) |
+| `makepkginfo/MPIconvert.swift` | `makepkginfo` | `convert` subcommand (YAML ⇄ plist) |
+
+`yaml_to_plist/yaml_to_plist.swift` is intentionally absent from the Xcode
+project — it builds via `Package.swift`, not a target here.
+
+**Build every scheme before releasing, not a sample.** The release workflow builds
+all of them; building only `managedsoftwareupdate`, `munkiimport` and
+`makecatalogs` will not catch a dropped `manifestutil` file:
+
+```bash
+for s in $(xcodebuild -project munki.xcodeproj -list | sed -n '/Schemes:/,$p' | tail -n +2 | tr -d ' '); do
+  xcodebuild -project munki.xcodeproj -scheme "$s" -configuration Release build >/dev/null 2>&1 || echo "FAILED: $s"
+done
+```
+
+`munkiCLItesting` is a test bundle and reports `Found no destinations ... for
+action build`; that one is expected and is not part of the shipped pkg.
