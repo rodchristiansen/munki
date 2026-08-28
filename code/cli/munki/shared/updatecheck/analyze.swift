@@ -316,8 +316,23 @@ func processInstall(
                     case let .connection(errorCode, description),
                          let .download(errorCode, description),
                          let .http(errorCode, description):
-                        display.warning("Download of \(manifestItemName) failed: error \(errorCode): \(description)")
+                        // A transient network condition is not an install problem: the
+                        // item simply has not been downloaded yet and the next run will
+                        // try again. Log it, but don't raise a warning for it unless the
+                        // admin has asked to see them.
+                        if err.isTransientNetworkFailure,
+                           boolPref("SuppressTransientDownloadWarnings") ?? true
+                        {
+                            display.info("Download of \(manifestItemName) deferred: transient network error \(errorCode): \(description). Will retry on the next run.")
+                        } else {
+                            display.warning("Download of \(manifestItemName) failed: error \(errorCode): \(description)")
+                        }
                         processedItem["note"] = "Download failed: \(description)"
+                        // Record the numeric code so consumers of ManagedInstallReport can
+                        // tell a transient network failure from a real one without having
+                        // to pattern-match the localized description.
+                        processedItem["download_error_code"] = errorCode
+                        processedItem["download_error_is_transient"] = err.isTransientNetworkFailure
                     }
                 } else {
                     display.warning("Can't install \(manifestItemName) because \(error.localizedDescription)")

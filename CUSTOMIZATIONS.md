@@ -12,6 +12,7 @@
 | Category | Location | Documentation |
 |----------|----------|---------------|
 | **munkiimport** | `code/cli/munki/munkiimport/` | [customizations.md](code/cli/munki/munkiimport/customizations.md) |
+| **Transient download warnings** | `code/cli/munki/shared/` | [Below](#2-transient-download-warnings) |
 | **Branding** | `code/apps/Managed Software Center/` | [customizations.md](code/apps/Managed%20Software%20Center/customizations.md) |
 | **Launchd** | `launchd/` | [customizations.md](launchd/customizations.md) |
 | **Build System** | Root + `code/tools/` | [customizations.md](code/tools/customizations.md) |
@@ -33,7 +34,41 @@
 - Extended template field copying (scripts, forced_install, etc.)
 - Interactive architecture editing
 
-### 2. Branding Assets
+### 2. Transient Download Warnings
+
+Upstream raises a `WARNING` for every failed download, which lands in
+`warnings.log` and the `Warnings` array of `ManagedInstallReport.plist`. On a
+laptop fleet that produces a constant stream of warnings for a condition that is
+not a fault: a machine that sleeps, roams between networks or leaves the local
+network mid-download simply retries on the next run.
+
+We classify transient network conditions and log them at `info` instead — still
+in the run log, but not a warning — controlled by a preference.
+
+| Item | Value |
+|---|---|
+| Preference | `SuppressTransientDownloadWarnings` (bool) |
+| Our default | `true` — diverges from the upstream `Suppress*` convention of defaulting to `false` |
+| Set to `false` | restores upstream behaviour and warns on every failed download |
+
+Three files carry it:
+
+- `code/cli/munki/shared/network/fetch.swift` — `FetchError.isTransientNetworkFailure`
+  and `FetchError.transientNetworkErrorCodes`
+- `code/cli/munki/shared/prefs.swift` — the default and the `--show-config` key list
+- `code/cli/munki/shared/updatecheck/analyze.swift` — chooses `info` vs `warning`,
+  and records `download_error_code` / `download_error_is_transient` on the
+  processed item
+
+**Why it keys on the NSURLError code and not the message.** Insufficient disk
+space is thrown as `FetchError.download(errorCode: -1, ...)` and reaches the same
+call site carrying an identical `"Download failed: "` prefix, so matching on the
+description would silently hide a real, actionable failure. TLS failures also
+arrive as `.connection`, but with SSL error codes rather than NSURLError codes.
+Only the six NSURLError connectivity codes are treated as transient; anything
+unrecognised keeps warning.
+
+### 3. Branding Assets
 **Location:** `code/apps/Managed Software Center/`  
 **Documentation:** [`code/apps/Managed Software Center/customizations.md`](code/apps/Managed%20Software%20Center/customizations.md)
 
@@ -45,7 +80,7 @@
 - `*/InfoPlist.strings` - Localized display names (all locales)
 - `Managed Software Center.xcodeproj/project.pbxproj` - Xcode project configuration
 
-### 3. Launchd Configuration
+### 4. Launchd Configuration
 **Location:** `launchd/`  
 **Documentation:** [`launchd/customizations.md`](launchd/customizations.md)
 
@@ -53,7 +88,7 @@
 - LaunchAgents for ManagedSoftwareCenter, MunkiStatus, munki-notifier
 - LaunchDaemons for authrestartd, logouthelper, managedsoftwareupdate-*
 
-### 4. Build System
+### 5. Build System
 **Location:** Root + `code/tools/`  
 **Documentation:** [`code/tools/customizations.md`](code/tools/customizations.md)
 
@@ -179,6 +214,9 @@ CUSTOMIZATIONS.md
 ### Files We Enhance (merge carefully)
 ```
 code/cli/munki/munkiimport/munkiimport.swift
+code/cli/munki/shared/network/fetch.swift
+code/cli/munki/shared/prefs.swift
+code/cli/munki/shared/updatecheck/analyze.swift
 code/tools/make_munki_mpkg.sh
 code/tools/make_swift_munki_pkg.sh
 ```
