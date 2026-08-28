@@ -59,7 +59,7 @@ func copyInstallerItemToRepo(_ repo: Repo, itempath: String, version: String, su
 
     // don't copy if the file is already in the repo
     if let filerepo = repo as? FileRepo {
-        // FileRepo and subclasses have a fulPath method
+        // FileRepo and subclasses have a fullPath method
         let repoPath = (filerepo.fullPath(destIdentifier) as NSString).standardizingPath
         let localPath = getAbsolutePath(itempath)
         if repoPath == localPath {
@@ -373,7 +373,8 @@ func findMatchingPkginfo(_ repo: Repo, _ pkginfo: PlistDict) async -> PlistDict?
 
 /// Return repo identifier for icon
 func getIconIdentifier(_ pkginfo: PlistDict) -> String {
-    var iconName = pkginfo["icon_name"] as? String ?? pkginfo["name"] as? String ?? ""
+    let itemName = pkginfo.getString(for: "name")
+    var iconName = pkginfo.getString(for: "icon_name", fallback: itemName)
     if (iconName as NSString).pathExtension.isEmpty {
         iconName += ".png"
     }
@@ -464,18 +465,23 @@ func generatePNGFromDMGitem(_ repo: Repo, dmgPath: String, pkginfo: PlistDict) a
             }
         }
         if let itemsToCopy = pkginfo["items_to_copy"] as? [PlistDict] {
-            let apps = itemsToCopy.filter {
-                ($0["source_item"] as? String ?? "").hasSuffix(".app")
-            }.map {
-                $0["source_item"] as? String ?? ""
-            }
-            if !apps.isEmpty {
-                let appPath = (mountpoint as NSString).appendingPathComponent(apps[0])
-                if let iconPath = findIconForApp(appPath) {
-                    let repoIconIdentifier = try await convertAndInstallIcon(
-                        repo, name: itemname, iconPath: iconPath
-                    )
-                    return repoIconIdentifier
+            for copyItem in itemsToCopy {
+                guard let sourceItem = copyItem["source_item"] as? String else { continue }
+                let sourcePath = (mountpoint as NSString).appendingPathComponent(sourceItem)
+                if sourceItem.hasSuffix(".app") {
+                    // direct app — use it
+                    if let iconPath = findIconForApp(sourcePath) {
+                        return try await convertAndInstallIcon(repo, name: itemname, iconPath: iconPath)
+                    }
+                } else if pathIsDirectory(sourcePath), !isApplication(sourcePath) {
+                    // folder containing apps — use icon from first app found
+                    let apps = applicationsInDirectory(sourcePath)
+                    for appName in apps {
+                        let appPath = (sourcePath as NSString).appendingPathComponent(appName)
+                        if let iconPath = findIconForApp(appPath) {
+                            return try await convertAndInstallIcon(repo, name: itemname, iconPath: iconPath)
+                        }
+                    }
                 }
             }
         }

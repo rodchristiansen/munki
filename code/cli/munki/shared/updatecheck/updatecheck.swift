@@ -38,7 +38,7 @@ func downloadIconsForActiveItems(_ installInfo: PlistDict) {
 /// an install or removal
 /// this could happen if an item is downloaded on one updatecheck run,
 /// but later removed from the manifest before it is installed or removed
-/// -- so the cached itemis no longer needed.
+/// -- so the cached item is no longer needed.
 func cleanUpDownloadCache(_ installInfo: PlistDict) {
     let managedInstalls = installInfo["managed_installs"] as? [PlistDict] ?? []
     let removals = installInfo["removals"] as? [PlistDict] ?? []
@@ -250,8 +250,10 @@ func checkForUpdates(clientID: String? = nil, localManifestPath: String? = nil) 
 
     munkiLog("### Beginning managed software check ###")
     display.majorStatus("Checking for available updates...")
-    munkiStatusPercent(-1)
-    munkiStatusDetail("")
+    if DisplayOptions.munkistatusoutput {
+        munkiStatusPercent(-1)
+        munkiStatusDetail("")
+    }
 
     var success = true
 
@@ -261,9 +263,9 @@ func checkForUpdates(clientID: String? = nil, localManifestPath: String? = nil) 
     } else {
         do {
             mainManifestPath = try getPrimaryManifest(alternateIdentifier: clientID)
-        } catch let err as ManifestError {
+        } catch let err {
             display.error("Could not retrieve managed install primary manifest: \(err.localizedDescription)")
-            throw err
+            return .finishedWithErrors
         }
     }
 
@@ -319,10 +321,12 @@ func checkForUpdates(clientID: String? = nil, localManifestPath: String? = nil) 
             return .noUpdatesAvailable
         }
 
-        // reset progress indicator and detail field
-        munkiStatusMessage("Checking for additional changes...")
-        munkiStatusPercent(-1)
-        munkiStatusDetail("")
+        if display.munkistatusoutput {
+            // reset progress indicator and detail field
+            munkiStatusMessage("Checking for additional changes...")
+            munkiStatusPercent(-1)
+            munkiStatusDetail("")
+        }
 
         // check managed_uninstalls
         display.detail("**Checking for removals**")
