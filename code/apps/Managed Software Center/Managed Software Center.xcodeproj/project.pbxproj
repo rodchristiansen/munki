@@ -41,6 +41,9 @@
 		C04F829F20BB713B00F9C57D /* munki.swift in Sources */ = {isa = PBXBuildFile; fileRef = C04F829E20BB713B00F9C57D /* munki.swift */; };
 		C04F82A120BB77CF00F9C57D /* FoundationPlist.swift in Sources */ = {isa = PBXBuildFile; fileRef = C04F82A020BB77CF00F9C57D /* FoundationPlist.swift */; };
 		C0546BD620FBE61A003FE5A6 /* MSCAlertController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0546BD520FBE61A003FE5A6 /* MSCAlertController.swift */; };
+		C0AA10012F3E58C50029A293 /* HoursSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0AA20012F3E58C50029A293 /* HoursSelector.swift */; };
+		C0AA10022F3E58C50029A293 /* MSCBlockingAppsController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0AA20022F3E58C50029A293 /* MSCBlockingAppsController.swift */; };
+		C0AA10032F3E58C50029A293 /* PrefsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0AA20032F3E58C50029A293 /* PrefsWindowController.swift */; };
 		C0546BD820FDAD82003FE5A6 /* power.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0546BD720FDAD82003FE5A6 /* power.swift */; };
 		C0546BDC20FE961E003FE5A6 /* MSCPasswordAlertController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0546BDB20FE961E003FE5A6 /* MSCPasswordAlertController.swift */; };
 		C05F87932105587A000DB8D8 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = C05F87952105587A000DB8D8 /* Localizable.strings */; };
@@ -120,6 +123,9 @@
 		C04F829E20BB713B00F9C57D /* munki.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = munki.swift; sourceTree = "<group>"; };
 		C04F82A020BB77CF00F9C57D /* FoundationPlist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoundationPlist.swift; sourceTree = "<group>"; };
 		C0546BD520FBE61A003FE5A6 /* MSCAlertController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MSCAlertController.swift; sourceTree = "<group>"; };
+		C0AA20012F3E58C50029A293 /* HoursSelector.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HoursSelector.swift; sourceTree = "<group>"; };
+		C0AA20022F3E58C50029A293 /* MSCBlockingAppsController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MSCBlockingAppsController.swift; sourceTree = "<group>"; };
+		C0AA20032F3E58C50029A293 /* PrefsWindowController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PrefsWindowController.swift; sourceTree = "<group>"; };
 		C0546BD720FDAD82003FE5A6 /* power.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = power.swift; sourceTree = "<group>"; };
 		C0546BDB20FE961E003FE5A6 /* MSCPasswordAlertController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MSCPasswordAlertController.swift; sourceTree = "<group>"; };
 		C05F878D210556C9000DB8D8 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/MainMenu.strings; sourceTree = "<group>"; };
@@ -293,6 +299,9 @@
 				849BF63B2E1051BE004A020D /* MainWindowController+WKScriptMessageHandler.swift */,
 				C0C5DF6B20F5C27700CA0687 /* MSCStatusController.swift */,
 				C0546BD520FBE61A003FE5A6 /* MSCAlertController.swift */,
+				C0AA20012F3E58C50029A293 /* HoursSelector.swift */,
+				C0AA20022F3E58C50029A293 /* MSCBlockingAppsController.swift */,
+				C0AA20032F3E58C50029A293 /* PrefsWindowController.swift */,
 				C0546BDB20FE961E003FE5A6 /* MSCPasswordAlertController.swift */,
 				C012D5332C25121F004FDB5A /* BlurredBackgroundController.swift */,
 				8428C7E32E0CB41F00D83D41 /* SidebarViewController.swift */,
@@ -504,6 +513,9 @@
 				C012D5342C25121F004FDB5A /* BlurredBackgroundController.swift in Sources */,
 				C04F829120BB34D100F9C57D /* Localization.swift in Sources */,
 				C0546BD620FBE61A003FE5A6 /* MSCAlertController.swift in Sources */,
+				C0AA10012F3E58C50029A293 /* HoursSelector.swift in Sources */,
+				C0AA10022F3E58C50029A293 /* MSCBlockingAppsController.swift in Sources */,
+				C0AA10032F3E58C50029A293 /* PrefsWindowController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

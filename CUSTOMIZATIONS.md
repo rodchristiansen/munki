@@ -225,6 +225,33 @@ find . -name '*.swift' -not -path './munkipkg/*' -not -path '*/.build/*' | while
 done
 ```
 
+The same trap runs in the **opposite direction** for the app projects.
+
+`code/apps/Managed Software Center/Managed Software Center.xcodeproj/project.pbxproj`
+is a **keep OURS** file (custom app name, branding, icons). Keeping it means
+*upstream's newly added source files never get referenced*, so they sit on disk
+uncompiled and the app fails with `cannot find type '<Type>' in scope`. The
+v7.3.0 sync added three files this way — `Controllers/HoursSelector.swift`,
+`Controllers/MSCBlockingAppsController.swift`,
+`Controllers/PrefsWindowController.swift`.
+
+So after a sync, audit **both** directions:
+
+```bash
+cd code/apps
+for d in */; do
+  pbx=$(find "$d" -maxdepth 1 -name '*.xcodeproj')/project.pbxproj
+  [ -f "$pbx" ] || continue
+  find "$d" -name '*.swift' -not -path '*/build/*' | while read -r f; do
+    grep -q "$(basename "$f")" "$pbx" || echo "UNREFERENCED: $f"
+  done
+done
+```
+
+Build all three apps too, not just the CLI — `make_swift_munki_pkg.sh` needs
+Managed Software Center, MunkiStatus and munki-notifier, each at
+`<app>/build/Release/`, which is why `SYMROOT="$PWD/build"` must survive.
+
 Fork-only CLI sources that must stay in the project:
 
 | File | Target | Provides |
