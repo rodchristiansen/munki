@@ -54,7 +54,7 @@ struct MunkiImportOptions: ParsableArguments {
 
     @Flag(help: "Create pkginfo files in YAML format instead of XML plist.")
     var yaml = false
-    
+
     /// Determine if YAML output should be used based on flag or global preference
     var shouldUseYaml: Bool {
         if yaml {
@@ -62,6 +62,10 @@ struct MunkiImportOptions: ParsableArguments {
         }
         return UserDefaults.standard.bool(forKey: "yaml")
     }
+
+    @Flag(name: [.long, .customLong("rebuild-catalogs")],
+          help: "Rebuild the catalogs after importing the item. If interactive and this flag is not specified, you will be prompted.")
+    var rebuildCatalogs = false
 
     mutating func validate() throws {
         // update plugin (not really a validation, but close enough)
