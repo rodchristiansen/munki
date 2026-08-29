@@ -26,7 +26,7 @@ struct SessionLogTests {
         #expect(id.count == 15)
         let day = String(id.prefix(10))
         let time = String(id.suffix(4))
-        #expect(log.sessionDir == "\(root)/Logs/\(day)/\(time)")
+        #expect(log.sessionDir == "\(root)/logs/\(day)/\(time)")
         for name in ["session.json", "events.jsonl", "install.log", "run.log"] {
             #expect(FileManager.default.fileExists(atPath: "\(log.sessionDir)/\(name)"), "\(name) missing")
         }
@@ -106,8 +106,8 @@ struct SessionLogTests {
         let second = SessionLog(baseDir: root)
         let id = second.start(runType: "auto")
         #expect(id.hasSuffix("_2") || id != first.sessionId)
-        #expect(SessionLog.allSessionDirs(logsDir: "\(root)/Logs").count == 2)
-        #expect(SessionLog.latestSessionDir(logsDir: "\(root)/Logs") == second.sessionDir)
+        #expect(SessionLog.allSessionDirs(logsDir: "\(root)/logs").count == 2)
+        #expect(SessionLog.latestSessionDir(logsDir: "\(root)/logs") == second.sessionDir)
         second.end(status: "completed", summary: SessionSummary())
     }
 
@@ -142,7 +142,7 @@ struct SessionLogTests {
     @Test func pruneRemovesOnlyOldDayDirectories() throws {
         let root = makeTempRoot()
         defer { try? FileManager.default.removeItem(atPath: root) }
-        let logs = "\(root)/Logs"
+        let logs = "\(root)/logs"
         let fm = FileManager.default
         for name in ["2026-01-01", "2099-01-01", "ManagedSoftwareUpdate.log"] {
             try fm.createDirectory(atPath: "\(logs)/\(name)", withIntermediateDirectories: true)
@@ -151,6 +151,21 @@ struct SessionLogTests {
         #expect(!fm.fileExists(atPath: "\(logs)/2026-01-01"))
         #expect(fm.fileExists(atPath: "\(logs)/2099-01-01"))
         #expect(fm.fileExists(atPath: "\(logs)/ManagedSoftwareUpdate.log"))
+    }
+
+    @Test func existingLogsDirectoryIsRenamedToLowercase() throws {
+        let root = makeTempRoot()
+        defer { try? FileManager.default.removeItem(atPath: root) }
+        let fm = FileManager.default
+        try fm.createDirectory(atPath: "\(root)/Logs", withIntermediateDirectories: true)
+        fm.createFile(atPath: "\(root)/Logs/ManagedSoftwareUpdate.log", contents: Data("x".utf8))
+        let log = SessionLog(baseDir: root)
+        log.start(runType: "auto")
+        log.end(status: "completed", summary: SessionSummary())
+        let names = try fm.contentsOfDirectory(atPath: root)
+        #expect(names.contains("logs"))
+        #expect(!names.contains("Logs"))
+        #expect(fm.fileExists(atPath: "\(root)/logs/ManagedSoftwareUpdate.log"))
     }
 
     @Test func directoryNameValidation() {
