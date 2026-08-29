@@ -49,6 +49,7 @@ func munkiLog(_ message: String, logFile: String = "", logLevel: OSLogType = .de
     dateformatter.formatOptions = [.withInternetDateTime, .withSpaceBetweenDateAndTime, .withFractionalSeconds]
     let timestamp = dateformatter.string(from: Date())
     let logString = "\(timestamp) \(message)\n"
+    SessionLog.shared.mirror(message, logFile: logFile)
     var logPath = ""
     var subsystem = "com.googlecode.munki.managedsoftwareupdate"
     if logFile.isEmpty {

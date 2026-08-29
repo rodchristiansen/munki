@@ -13,6 +13,7 @@
 |----------|----------|---------------|
 | **munkiimport** | `code/cli/munki/munkiimport/` | [customizations.md](code/cli/munki/munkiimport/customizations.md) |
 | **Transient download warnings** | `code/cli/munki/shared/` | [Below](#2-transient-download-warnings) |
+| **Session logs and reports** | `code/cli/munki/shared/sessionlog.swift` | [sessionlog-customizations.md](code/cli/munki/shared/sessionlog-customizations.md) |
 | **Branding** | `code/apps/Managed Software Center/` | [customizations.md](code/apps/Managed%20Software%20Center/customizations.md) |
 | **Launchd** | `launchd/` | [customizations.md](launchd/customizations.md) |
 | **Build System** | Root + `code/tools/` | [customizations.md](code/tools/customizations.md) |
@@ -199,6 +200,9 @@ git push origin main
 
 ### Files We Own (never accept upstream changes)
 ```
+code/cli/munki/shared/sessionlog.swift
+code/cli/munki/shared/sessionlog-customizations.md
+code/cli/munki/munkiCLItesting/sessionlogTests.swift
 code/apps/Managed Software Center/Resources/WebResources/branding*.jpg
 code/apps/Managed Software Center/AppIcon.icon/
 code/apps/Managed Software Center/*/InfoPlist.strings
@@ -217,6 +221,11 @@ code/cli/munki/munkiimport/munkiimport.swift
 code/cli/munki/shared/network/fetch.swift
 code/cli/munki/shared/prefs.swift
 code/cli/munki/shared/updatecheck/analyze.swift
+code/cli/munki/shared/display.swift
+code/cli/munki/shared/munkilog.swift
+code/cli/munki/shared/installer/installer.swift
+code/cli/munki/managedsoftwareupdate/managedsoftwareupdate.swift
+code/cli/munki/munki.xcodeproj/project.pbxproj
 code/tools/make_munki_mpkg.sh
 code/tools/make_swift_munki_pkg.sh
 ```
