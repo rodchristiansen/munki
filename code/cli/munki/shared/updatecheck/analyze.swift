@@ -138,6 +138,9 @@ func processInstall(
     isManagedUpdate: Bool = false,
     isOptionalInstall: Bool = false
 ) async -> Bool {
+    SessionLog.shared.beginItem(name: (manifestItem as NSString).lastPathComponent)
+    defer { SessionLog.shared.endItem() }
+
     /// helper function
     func appendToProcessedManagedInstalls(_ item: PlistDict) {
         var managedInstalls = installInfo["managed_installs"] as? [PlistDict] ?? []
@@ -220,6 +223,7 @@ func processInstall(
 
     let name = pkginfo["name"] as? String ?? "<unknown>"
     let version = pkginfo["version"] as? String ?? "<unknown>"
+    SessionLog.shared.updateItem(version: version, displayName: pkginfo["display_name"] as? String)
 
     // get list of dependencies. 'requires' should be a list of strings, but
     // sometimes admins define it as just a single string. Account for both
@@ -254,6 +258,20 @@ func processInstall(
     processedItem["icon_name"] = pkginfo["icon_name"]
 
     let installedState = await installedState(pkginfo)
+    do {
+        let detection: String = if pkginfo["installcheck_script"] != nil { "script" }
+            else if pkginfo["installs"] != nil { "installs_array" }
+            else if pkginfo["receipts"] != nil { "receipts" }
+            else { "none" }
+        let (status, reason, code) = switch installedState {
+        case .thisVersionInstalled: ("installed", "\(name)-\(version) is installed", "version_match")
+        case .newerVersionInstalled: ("installed", "A newer version of \(name) than \(version) is installed", "version_match")
+        case .thisVersionNotInstalled: ("pending", "\(name)-\(version) is not installed", "not_installed")
+        }
+        SessionLog.shared.logStatusCheck(name: name, version: version, status: status, statusReason: reason,
+                                         statusReasonCode: code, detectionMethod: detection,
+                                         needsAction: installedState == .thisVersionNotInstalled)
+    }
     if installedState == .thisVersionNotInstalled {
         if !dependenciesMet {
             // we should not attempt to install
@@ -809,6 +827,9 @@ func processRemoval(
     catalogList: [String],
     installInfo: inout PlistDict
 ) async -> Bool {
+    SessionLog.shared.beginItem(name: (manifestItem as NSString).lastPathComponent)
+    defer { SessionLog.shared.endItem() }
+
     func getReceiptsToRemove(_ item: PlistDict) async -> [String] {
         /// Returns a list of (installed/present) receipts to remove for item
         if let name = item["name"] as? String {

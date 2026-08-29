@@ -94,6 +94,7 @@ class DisplayAndLog: MunkiLogger {
             // also log to our special errors log and add to report
             munkiLog(errorMsg, logFile: "errors.log")
             Report.shared.add(string: errorMsg, to: "Errors")
+            SessionLog.shared.recordProblem(isError: true, message: message)
         }
         // let the superclass handle logging to the main log
         super.error(message)
@@ -109,6 +110,7 @@ class DisplayAndLog: MunkiLogger {
             // also log to our special warnings log and add to report
             munkiLog(warningMsg, logFile: "warnings.log")
             Report.shared.add(string: warningMsg, to: "Warnings")
+            SessionLog.shared.recordProblem(isError: false, message: message)
         }
         // let the superclass handle logging to the main log
         super.warning(message)

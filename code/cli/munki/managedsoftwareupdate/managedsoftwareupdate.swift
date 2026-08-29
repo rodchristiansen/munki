@@ -267,6 +267,7 @@ struct ManagedSoftwareUpdate: AsyncParsableCommand {
         // was unavailable. We need to revisit this and define additional
         // update check results.
         recordUpdateCheckResult(.checkDidntStart)
+        SessionLog.shared.abandon(reason: "Run aborted by preflight script: \(result)")
         // tell status app we're done sending status
         munkiStatusQuit()
         throw ExitCode(EXIT_STATUS_PREFLIGHT_FAILURE)
@@ -547,6 +548,14 @@ struct ManagedSoftwareUpdate: AsyncParsableCommand {
         configureDisplayOptions()
         await doCleanupTasks(runType: runtype)
         initializeReport()
+        SessionLog.shared.start(runType: runtype, metadata: [
+            "check_only": commonOptions.checkOnly,
+            "install_only": commonOptions.installOnly,
+            "auto": otherOptions.auto,
+            "verbosity": commonOptions.verbose,
+            "munkistatusoutput": otherOptions.munkistatusoutput,
+            "munki_version": getVersion(),
+        ])
 
         // install handlers for SIGINT and SIGTERM
         let sigintSrc = installSignalHandler(SIGINT, logger: MunkiLogger.standard)
@@ -610,6 +619,11 @@ struct ManagedSoftwareUpdate: AsyncParsableCommand {
         sendDockUpdateNotification()
         sendEndedNotification()
 
+        let sessionSummary = SessionLog.summary(from: Report.shared.report)
+        SessionLog.shared.end(
+            status: sessionSummary.failures > 0 || sessionSummary.errors > 0 ? "partial_failure" : "completed",
+            summary: sessionSummary
+        )
         munkiLog("### Ending managedsoftwareupdate run ###")
         if !otherOptions.quiet {
             print("Done.")

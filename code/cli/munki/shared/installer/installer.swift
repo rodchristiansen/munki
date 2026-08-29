@@ -290,6 +290,8 @@ func installWithInstallInfo(
         let displayName = item.getString(for: "display_name", fallback: itemName)
         let versionToInstall = item.getString(for: "version_to_install")
         let installerType = item.getString(for: "installer_type", fallback: "pkg_install")
+        SessionLog.shared.beginItem(name: itemName, version: versionToInstall, displayName: displayName)
+        defer { SessionLog.shared.endItem() }
 
         if installerType == "startosinstall" {
             skippedInstalls.append(item)
@@ -333,6 +335,8 @@ func installWithInstallInfo(
 
         // Attempt actual install
         display.majorStatus("Installing \(displayName) (\(itemIndex) of \(installList.count))")
+        SessionLog.shared.logInstall(name: itemName, version: versionToInstall, action: "install",
+                                     status: "started", message: "Installing \(displayName)")
         let (retcode, restartNeededForThisItem) = await installItem(item)
         restartFlag = restartFlag || restartNeededForThisItem
 
@@ -354,6 +358,14 @@ func installWithInstallInfo(
             logMessage += "FAILED with return code: \(retcode)"
         }
         munkiLog(logMessage, logFile: "Install.log")
+        SessionLog.shared.logInstall(
+            name: itemName, version: versionToInstall, action: "install",
+            status: retcode == 0 ? "completed" : "failed", message: logMessage,
+            error: retcode == 0 ? nil : "return code \(retcode)",
+            statusReason: retcode == 0 ? "Installation completed successfully" : "Installer returned \(retcode)",
+            statusReasonCode: retcode == 0 ? "install_completed" : "check_failed",
+            detectionMethod: "none", installedVersion: retcode == 0 ? versionToInstall : nil
+        )
 
         // Calculate install duration; note, if a machine is put to sleep
         // during the install this time may be inaccurate.
@@ -574,6 +586,8 @@ func processRemovals(
     for item in removalList {
         let itemName = item.getString(for: "name", fallback: "<unknown>")
         let displayName = item.getString(for: "display_name", fallback: itemName)
+        SessionLog.shared.beginItem(name: itemName, version: item.getString(for: "installed_version"), displayName: displayName)
+        defer { SessionLog.shared.endItem() }
         index += 1
 
         if onlyUnattended {
@@ -617,8 +631,17 @@ func processRemovals(
 
         // now actually attempt to uninstall the item!
         display.majorStatus("Removing \(displayName) (\(index) of \(removalList.count))")
+        SessionLog.shared.logInstall(name: itemName, version: item.getString(for: "installed_version"), action: "uninstall",
+                                     status: "started", message: "Removing \(displayName)")
         let (retcode, restartForThisItem) = await uninstallItem(item)
         restartFlag = restartFlag || restartForThisItem
+        SessionLog.shared.logInstall(
+            name: itemName, version: item.getString(for: "installed_version"), action: "uninstall",
+            status: retcode == 0 ? "completed" : "failed",
+            message: retcode == 0 ? "Removal of \(displayName): SUCCESSFUL" : "Removal of \(displayName): FAILED with return code: \(retcode)",
+            error: retcode == 0 ? nil : "return code \(retcode)",
+            statusReasonCode: retcode == 0 ? "uninstall_confirmed" : "check_failed", detectionMethod: "none"
+        )
 
         // log removal success/failure
         if retcode == 0 {
