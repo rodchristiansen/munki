@@ -32,7 +32,7 @@ func mainLogDir() -> String {
     if let logFile = pref("LogFile") as? String {
         return (logFile as NSString).deletingLastPathComponent
     }
-    return managedInstallsDir(subpath: "Logs")
+    return managedInstallsDir(subpath: "logs")
 }
 
 /// Returns the path to a log with the given name in the same directory as our main log

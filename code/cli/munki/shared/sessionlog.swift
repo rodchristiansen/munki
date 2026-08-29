@@ -5,7 +5,7 @@
 //  Structured, per-run session logging and machine-readable reports.
 //
 //  Every managedsoftwareupdate run gets its own directory,
-//      <ManagedInstallDir>/Logs/YYYY-MM-DD/HHMM/
+//      <ManagedInstallDir>/logs/YYYY-MM-DD/HHMM/
 //  holding session.json (the run: type, timing, environment, summary, and
 //  every warning and error attributed to the item that raised it),
 //  events.jsonl (one structured record per install, removal, status check,
@@ -184,7 +184,7 @@ final class SessionLog {
         self.baseDir = baseDir ?? managedInstallsDir()
     }
 
-    var logsDir: String { (baseDir as NSString).appendingPathComponent("Logs") }
+    var logsDir: String { (baseDir as NSString).appendingPathComponent("logs") }
     var reportsDir: String { (baseDir as NSString).appendingPathComponent("reports") }
 
     /// The managed item whose processing is in progress, if any.
@@ -222,6 +222,7 @@ final class SessionLog {
     func start(runType: String, metadata: [String: Any] = [:]) -> String {
         lock.lock(); defer { lock.unlock() }
         if isActive { return sessionId }
+        Self.adoptLowercaseLogsDirectory(in: baseDir)
         let now = Date()
         let dayName = Self.dayFormatter.string(from: now)
         let timeName = Self.timeFormatter.string(from: now)
@@ -410,7 +411,7 @@ final class SessionLog {
 
     // MARK: Session lookup
 
-    /// The most recent session directory under Logs/, or nil.
+    /// The most recent session directory under logs/, or nil.
     static func latestSessionDir(logsDir: String) -> String? {
         allSessionDirs(logsDir: logsDir).first
     }
@@ -641,6 +642,19 @@ final class SessionLog {
             guard let day = dayFormatter.date(from: entry), day < cutoff else { continue }
             try? fm.removeItem(atPath: (logsDir as NSString).appendingPathComponent(entry))
         }
+    }
+
+    /// Munki historically created `Logs/`. Rename it to `logs/` so the on-disk
+    /// name is lowercase. On a case-insensitive volume this is a case-only
+    /// rename of the same directory; on a case-sensitive one an existing `Logs/`
+    /// is renamed only when no `logs/` exists yet, so nothing is ever merged.
+    static func adoptLowercaseLogsDirectory(in baseDir: String) {
+        let fm = FileManager.default
+        guard let entries = try? fm.contentsOfDirectory(atPath: baseDir), entries.contains("Logs") else { return }
+        let old = (baseDir as NSString).appendingPathComponent("Logs")
+        let new = (baseDir as NSString).appendingPathComponent("logs")
+        if entries.contains("logs") { return }
+        _ = rename(old, new)
     }
 
     static func isDayDirectory(_ name: String) -> Bool {

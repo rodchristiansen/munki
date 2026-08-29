@@ -6,10 +6,10 @@ Fork addition: structured, per-run session logs and machine-readable reports, ma
 
 ## What it writes
 
-Each `managedsoftwareupdate` run gets a directory under the existing `Logs/` tree. The tree is day-nested; the flat logs Munki has always written stay where they are.
+Each `managedsoftwareupdate` run gets a day-nested directory under `logs/`, beside the flat logs Munki has always written, which stay exactly where they are.
 
 ```
-/Library/Managed Installs/Logs/
+/Library/Managed Installs/logs/
 ├── ManagedSoftwareUpdate.log            unchanged
 ├── Install.log                          unchanged
 ├── 2026-08-29/
@@ -31,13 +31,13 @@ Each `managedsoftwareupdate` run gets a directory under the existing `Logs/` tre
 | `events.json` | Events from the newest 10 sessions within the last 48 hours |
 | `items.json` | One record per managed item with its outcome this run |
 
-Session ids are `YYYY-MM-DD-HHMM`; a second run in the same minute gets `_2` … `_9`. Day directories older than 30 days are removed at the start of each run; nothing else under `Logs/` is touched.
+Session ids are `YYYY-MM-DD-HHMM`; a second run in the same minute gets `_2` … `_9`. Day directories older than 30 days are removed at the start of each run; nothing else under the directory is touched.
 
 `ManagedInstallReport.plist` is untouched. Managed Software Center, the notifier and the existing ReportMate installs module keep reading it.
 
-## Why `Logs/` and not `logs/`
+## `logs/` replaces `Logs/`
 
-Cimian writes `%ProgramData%\ManagedInstalls\logs`. APFS is case-insensitive by default, so `logs/` and Munki's `Logs/` are the same directory; the day-nested tree lives inside `Logs/` beside the flat files.
+The directory is `logs/`. The defaults in `prefs.swift`, `munkilog.swift`, `msuutils.swift`, Managed Software Center and MunkiStatus all say `logs`, and on the first run `SessionLog` renames an existing `Logs/` to `logs/` (a case-only rename on the default case-insensitive APFS volume; on a case-sensitive volume only when no `logs/` exists yet). A `LogFile` preference already written with the old capitalisation keeps working on case-insensitive volumes.
 
 ## Item attribution
 
@@ -49,7 +49,8 @@ Every warning and error goes through `DisplayAndLog.main`, which has no item in 
 |------|------|
 | `shared/sessionlog.swift` | The subsystem: `SessionLog`, record types, reports, retention. Self-contained. |
 | `shared/display.swift` | `error()` / `warning()` call `SessionLog.shared.recordProblem` |
-| `shared/munkilog.swift` | `munkiLog()` mirrors each line into the session copy |
+| `shared/munkilog.swift` | `munkiLog()` mirrors each line into the session copy; log dir default `logs` |
+| `shared/prefs.swift`, `managedsoftwareupdate/msuutils.swift`, MSC `munki.swift`, MunkiStatus `Utils.swift` | `Logs` → `logs` in defaults |
 | `managedsoftwareupdate/managedsoftwareupdate.swift` | `start` after `initializeReport()`, `end` before the ending log line, `abandon` on preflight failure |
 | `shared/installer/installer.swift` | Item context plus `install` / `uninstall` events (`started`, `completed`, `failed`) |
 | `shared/updatecheck/analyze.swift` | Item context plus a `status_check` event per evaluated item |
