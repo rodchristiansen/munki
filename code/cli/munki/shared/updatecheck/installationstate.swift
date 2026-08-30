@@ -27,45 +27,160 @@ enum InstallationState: Int {
     case newerVersionInstalled = 2
 }
 
+/// Reason codes for a status check result.
+enum StatusReasonCode {
+    static let notInstalled = "not_installed"
+    static let versionOutdated = "version_outdated"
+    static let versionMismatch = "version_mismatch"
+    static let fileMissing = "file_missing"
+    static let hashMismatch = "hash_mismatch"
+    static let receiptMissing = "receipt_missing"
+    static let installcheckNeeded = "installcheck_needed"
+    static let onDemand = "on_demand"
+    static let versionMatch = "version_match"
+    static let newerInstalled = "newer_installed"
+    static let checkFailed = "check_failed"
+}
+
+/// How a status check reached its answer.
+enum DetectionMethod {
+    static let script = "script"
+    static let versionScript = "version_script"
+    static let installsArray = "installs_array"
+    static let receipts = "receipts"
+    static let osVersion = "os_version"
+    static let none = "none"
+}
+
+/// The outcome of deciding whether an item needs install, with the reason the
+/// decision was made so the reason can be recorded, shown and compared across
+/// runs.
+struct InstallStatusResult {
+    var state: InstallationState
+    var reasonCode: String
+    var detectionMethod: String
+    var detail: String
+    var installedVersion: String?
+
+    var needsAction: Bool { state == .thisVersionNotInstalled }
+
+    var trigger: InstallTrigger? {
+        InstallTrigger.from(reasonCode: reasonCode, detectionMethod: detectionMethod, detail: detail, installedVersion: installedVersion)
+    }
+}
+
+/// Reads the version an installs item currently has on disk, or nil when the
+/// item is absent or has no version metadata.
+private func installedVersionOfInstallsItem(_ item: PlistDict) -> String? {
+    guard let type = item["type"] as? String, let path = item["path"] as? String, pathExists(path) else { return nil }
+    let key = item["version_comparison_key"] as? String ?? "CFBundleShortVersionString"
+    switch type {
+    case "application", "bundle":
+        let version = getBundleVersion(path, key: key)
+        return version.isEmpty ? nil : version
+    case "plist":
+        if let plist = (try? readPlist(fromFile: path)) as? PlistDict, let version = plist.stringValue(forKey: key) {
+            return version
+        }
+        return nil
+    default:
+        return nil
+    }
+}
+
+/// Describes one installs entry the way the trigger detail names it:
+/// "installs[i] type path".
+private func describeInstallsItem(_ item: PlistDict, index: Int) -> String {
+    let type = item["type"] as? String ?? "untyped"
+    let identity = item["path"] as? String ?? item["CFBundleIdentifier"] as? String ?? item["CFBundleName"] as? String ?? ""
+    return "installs[\(index)] \(type) \(identity)".trimmingCharacters(in: .whitespaces)
+}
+
+/// Turns a comparison result for an installs entry into a reason code and detail.
+private func installsItemFinding(_ item: PlistDict, index: Int, result: MunkiComparisonResult, catalogVersion: String) -> (code: String, detail: String, installedVersion: String?) {
+    let whereText = describeInstallsItem(item, index: index)
+    let type = item["type"] as? String ?? ""
+    switch result {
+    case .notPresent:
+        return (StatusReasonCode.fileMissing, "\(whereText): not present", nil)
+    case .older:
+        if type == "file", let expected = item["md5checksum"] as? String {
+            let found = (item["path"] as? String).map { md5hash(file: $0) } ?? ""
+            return (StatusReasonCode.hashMismatch, "\(whereText): hash mismatch — expected \(expected), found \(found)", nil)
+        }
+        let key = item["version_comparison_key"] as? String ?? "CFBundleShortVersionString"
+        let wanted = item.stringValue(forKey: key) ?? catalogVersion
+        let found = installedVersionOfInstallsItem(item)
+        if let found {
+            return (StatusReasonCode.versionOutdated, "\(whereText): \(key) \(found) is older than the catalog's \(wanted)", found)
+        }
+        return (StatusReasonCode.versionOutdated, "\(whereText): installed version is older than the catalog's \(wanted)", nil)
+    default:
+        return (StatusReasonCode.versionMismatch, "\(whereText): does not match the catalog", installedVersionOfInstallsItem(item))
+    }
+}
+
 /// Checks to see if the item described by pkginfo (or a newer version) is
-/// currently installed
+/// currently installed, and says why it decided so.
 ///
 /// All tests must pass to be considered installed.
-/// Returns InstallationState
-func installedState(_ pkginfo: PlistDict) async -> InstallationState {
+func installStatus(_ pkginfo: PlistDict) async -> InstallStatusResult {
+    let name = pkginfo["name"] as? String ?? "<unknown>"
+    let version = pkginfo.stringValue(forKey: "version") ?? ""
     var foundNewer = false
+    var newerVersion: String?
+
+    func installed(_ method: String, _ detail: String) -> InstallStatusResult {
+        if foundNewer {
+            return InstallStatusResult(state: .newerVersionInstalled, reasonCode: StatusReasonCode.newerInstalled,
+                                       detectionMethod: method, detail: "A newer version of \(name) than \(version) is installed", installedVersion: newerVersion)
+        }
+        return InstallStatusResult(state: .thisVersionInstalled, reasonCode: StatusReasonCode.versionMatch,
+                                   detectionMethod: method, detail: detail, installedVersion: version)
+    }
+
     if pkginfo["OnDemand"] as? Bool ?? false {
         // we always need to install these items
         display.debug1("This is an OnDemand item. Must install.")
-        return .thisVersionNotInstalled
+        return InstallStatusResult(state: .thisVersionNotInstalled, reasonCode: StatusReasonCode.onDemand,
+                                   detectionMethod: DetectionMethod.none, detail: "\(name) is an OnDemand item", installedVersion: nil)
     }
     if pkginfo["installcheck_script"] is String {
-        let retcode = await runEmbeddedScript(
+        let results = await runEmbeddedScriptAndReturnResults(
             name: "installcheck_script",
             pkginfo: pkginfo,
             suppressError: true
         )
-        display.debug1("installcheck_script returned \(retcode)")
+        display.debug1("installcheck_script returned \(results.exitcode)")
         // retcode 0 means install IS needed
-        if retcode == 0 {
-            return .thisVersionNotInstalled
+        if results.exitcode == 0 {
+            let output = (results.output + "\n" + results.error).trimmingCharacters(in: .whitespacesAndNewlines)
+            let detail = output.isEmpty ? "installcheck_script exited 0" : "installcheck_script exited 0: \(output)"
+            return InstallStatusResult(state: .thisVersionNotInstalled, reasonCode: StatusReasonCode.installcheckNeeded,
+                                       detectionMethod: DetectionMethod.script, detail: detail, installedVersion: nil)
         }
         // non-zero could be an error or successfully indicating
         // that an install is not needed. We hope it's the latter.
         // return .thisVersionInstalled so we're marked as not needing to be installed
-        return .thisVersionInstalled
+        return InstallStatusResult(state: .thisVersionInstalled, reasonCode: StatusReasonCode.versionMatch,
+                                   detectionMethod: DetectionMethod.script, detail: "installcheck_script exited \(results.exitcode)", installedVersion: nil)
     }
     if pkginfo["version_script"] is String {
         // if a version_script is defined, use that to determine installedState
         let compareResult = await compareUsingVersionScript(pkginfo)
-        if compareResult == .notPresent || compareResult == .older {
-            return .thisVersionNotInstalled
-        }
-        if compareResult == .newer {
-            return .newerVersionInstalled
-        }
-        if compareResult == .same {
-            return .thisVersionInstalled
+        switch compareResult {
+        case .notPresent:
+            return InstallStatusResult(state: .thisVersionNotInstalled, reasonCode: StatusReasonCode.notInstalled,
+                                       detectionMethod: DetectionMethod.versionScript, detail: "version_script reported \(name) is not present", installedVersion: nil)
+        case .older:
+            return InstallStatusResult(state: .thisVersionNotInstalled, reasonCode: StatusReasonCode.versionOutdated,
+                                       detectionMethod: DetectionMethod.versionScript, detail: "version_script reported a version older than the catalog's \(version)", installedVersion: nil)
+        case .newer:
+            return InstallStatusResult(state: .newerVersionInstalled, reasonCode: StatusReasonCode.newerInstalled,
+                                       detectionMethod: DetectionMethod.versionScript, detail: "version_script reported a version newer than \(version)", installedVersion: nil)
+        case .same:
+            return InstallStatusResult(state: .thisVersionInstalled, reasonCode: StatusReasonCode.versionMatch,
+                                       detectionMethod: DetectionMethod.versionScript, detail: "version_script reported \(version)", installedVersion: version)
         }
     }
     let installerType = pkginfo["installer_type"] as? String ?? ""
@@ -83,12 +198,15 @@ func installedState(_ pkginfo: PlistDict) async -> InstallationState {
         }
         let compareResult = compareVersions(currentOSVersion, installerItemVersion)
         if compareResult == .older {
-            return .thisVersionNotInstalled
+            return InstallStatusResult(state: .thisVersionNotInstalled, reasonCode: StatusReasonCode.versionOutdated,
+                                       detectionMethod: DetectionMethod.osVersion, detail: "macOS \(currentOSVersion) is older than \(installerItemVersion)", installedVersion: currentOSVersion)
         }
         if compareResult == .newer {
-            return .newerVersionInstalled
+            return InstallStatusResult(state: .newerVersionInstalled, reasonCode: StatusReasonCode.newerInstalled,
+                                       detectionMethod: DetectionMethod.osVersion, detail: "macOS \(currentOSVersion) is newer than \(installerItemVersion)", installedVersion: currentOSVersion)
         }
-        return .thisVersionInstalled
+        return InstallStatusResult(state: .thisVersionInstalled, reasonCode: StatusReasonCode.versionMatch,
+                                   detectionMethod: DetectionMethod.osVersion, detail: "macOS \(currentOSVersion) is installed", installedVersion: currentOSVersion)
     }
     if installerType == "stage_os_installer",
        var installerItemVersion = pkginfo.stringValue(forKey: "version")
@@ -108,69 +226,95 @@ func installedState(_ pkginfo: PlistDict) async -> InstallationState {
         }
         let compareResult = compareVersions(currentOSVersion, installerItemVersion)
         if compareResult == .same || compareResult == .newer {
-            return .newerVersionInstalled
+            return InstallStatusResult(state: .newerVersionInstalled, reasonCode: StatusReasonCode.newerInstalled,
+                                       detectionMethod: DetectionMethod.osVersion, detail: "macOS \(currentOSVersion) is at or above \(installerItemVersion)", installedVersion: currentOSVersion)
         }
         // installed OS version is lower; check to see if we've staged the os installer
-        for item in pkginfo["installs"] as? [PlistDict] ?? [] {
+        for (index, item) in (pkginfo["installs"] as? [PlistDict] ?? []).enumerated() {
             do {
                 let compareResult = try compareItem(item)
                 if compareResult != .same {
-                    return .thisVersionNotInstalled
+                    let finding = installsItemFinding(item, index: index, result: compareResult, catalogVersion: version)
+                    return InstallStatusResult(state: .thisVersionNotInstalled, reasonCode: finding.code,
+                                               detectionMethod: DetectionMethod.installsArray, detail: finding.detail, installedVersion: finding.installedVersion)
                 }
             } catch {
                 display.error(error.localizedDescription)
                 // return .thisVersionInstalled so we don't attempt an install
-                return .thisVersionInstalled
+                return InstallStatusResult(state: .thisVersionInstalled, reasonCode: StatusReasonCode.checkFailed,
+                                           detectionMethod: DetectionMethod.installsArray, detail: error.localizedDescription, installedVersion: nil)
             }
         }
         // all items are present and same version
-        return .thisVersionInstalled
+        return installed(DetectionMethod.installsArray, "the staged OS installer is present")
     }
     // do we have installs items?
     if let installItems = pkginfo["installs"] as? [PlistDict],
        !installItems.isEmpty
     {
-        for item in installItems {
+        for (index, item) in installItems.enumerated() {
             do {
                 let compareResult = try compareItem(item)
                 if compareResult == .older || compareResult == .notPresent {
-                    return .thisVersionNotInstalled
+                    let finding = installsItemFinding(item, index: index, result: compareResult, catalogVersion: version)
+                    return InstallStatusResult(state: .thisVersionNotInstalled, reasonCode: finding.code,
+                                               detectionMethod: DetectionMethod.installsArray, detail: finding.detail, installedVersion: finding.installedVersion)
                 }
                 if compareResult == .newer {
                     foundNewer = true
+                    newerVersion = installedVersionOfInstallsItem(item)
                 }
             } catch {
                 display.error(error.localizedDescription)
                 // return .thisVersionInstalled so we don't attempt an install
-                return .thisVersionInstalled
+                return InstallStatusResult(state: .thisVersionInstalled, reasonCode: StatusReasonCode.checkFailed,
+                                           detectionMethod: DetectionMethod.installsArray, detail: error.localizedDescription, installedVersion: nil)
             }
         }
+        return installed(DetectionMethod.installsArray, "all installs items are present at \(version)")
     } else if let receipts = pkginfo["receipts"] as? [PlistDict] {
         // if there are no 'installs' items, then we'll use receipt info
         // to determine install status.
         for item in receipts {
             do {
                 let compareResult = try await compareReceipt(item)
-                if compareResult == .older || compareResult == .notPresent {
-                    return .thisVersionNotInstalled
+                let pkgid = item["packageid"] as? String ?? "<unknown>"
+                let wanted = item.stringValue(forKey: "version") ?? version
+                if compareResult == .notPresent {
+                    return InstallStatusResult(state: .thisVersionNotInstalled, reasonCode: StatusReasonCode.receiptMissing,
+                                               detectionMethod: DetectionMethod.receipts, detail: "receipt \(pkgid) is not present", installedVersion: nil)
+                }
+                if compareResult == .older {
+                    let installedPkgs = await getInstalledPackages()
+                    let found = installedPkgs[pkgid]
+                    let detail = found.map { "receipt \(pkgid) \($0) is older than the catalog's \(wanted)" } ?? "receipt \(pkgid) is older than the catalog's \(wanted)"
+                    return InstallStatusResult(state: .thisVersionNotInstalled, reasonCode: StatusReasonCode.versionOutdated,
+                                               detectionMethod: DetectionMethod.receipts, detail: detail, installedVersion: found)
                 }
                 if compareResult == .newer {
                     foundNewer = true
                 }
-
             } catch {
                 display.error(error.localizedDescription)
                 // return .thisVersionInstalled so we don't attempt an install
-                return .thisVersionInstalled
+                return InstallStatusResult(state: .thisVersionInstalled, reasonCode: StatusReasonCode.checkFailed,
+                                           detectionMethod: DetectionMethod.receipts, detail: error.localizedDescription, installedVersion: nil)
             }
         }
+        return installed(DetectionMethod.receipts, "all receipts are present at \(version)")
     }
     // if we got this far, we passed all the tests, so the item
     // must be installed (or we don't have enough info...)
-    if foundNewer {
-        return .newerVersionInstalled
-    }
-    return .thisVersionInstalled
+    return installed(DetectionMethod.none, "no installs, receipts or installcheck_script to test; assumed installed")
+}
+
+/// Checks to see if the item described by pkginfo (or a newer version) is
+/// currently installed
+///
+/// All tests must pass to be considered installed.
+/// Returns InstallationState
+func installedState(_ pkginfo: PlistDict) async -> InstallationState {
+    return await installStatus(pkginfo).state
 }
 
 /// Checks to see if some version of a pkgitem is installed.
