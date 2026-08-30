@@ -112,7 +112,7 @@ struct SessionLogTests {
     }
 
     @Test func itemsReportReflectsResults() {
-        let report: PlistDict = [
+        let report: [String: Any] = [
             "ManagedInstalls": [
                 ["name": "Chrome", "display_name": "Google Chrome", "installed": true, "installed_version": "150.0", "version_to_install": "150.0"],
                 ["name": "Slack", "installed": false, "version_to_install": "4.40"],
