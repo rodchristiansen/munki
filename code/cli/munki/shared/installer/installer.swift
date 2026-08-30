@@ -384,6 +384,7 @@ func installWithInstallInfo(
             "unattended": onlyUnattended,
         ]
         Report.shared.add(dict: installResult, to: "InstallResults")
+        await LoopGuard.shared.noteInstall(item: item, name: itemName, version: versionToInstall, success: retcode == 0)
 
         // check to see if this installer item is needed by any additional
         // items in installinfo
@@ -828,4 +829,36 @@ func doInstallsAndRemovals(
         return .restart
     }
     return .none
+}
+
+// MARK: - Install-loop guard
+
+extension LoopGuard {
+    static let restartActionsThatFinalize = ["RequireRestart", "RecommendRestart", "RequireLogout"]
+
+    /// Records an install attempt and, after a success, checks that the item
+    /// now reads as installed. One that still wants to install is looping: a
+    /// restart-requiring item is remembered until the machine restarts, any
+    /// other is paused for the re-probe window with the reason on record.
+    func noteInstall(item: PlistDict, name: String, version: String, success: Bool) async {
+        if disabled || isBootstrap { return }
+        let fingerprint = item["loop_catalog_fingerprint"] as? String
+        let trigger = InstallTrigger(plist: item["loop_trigger"] as? PlistDict)
+        recordAttempt(name: name, version: version, success: success, catalogFingerprint: fingerprint, trigger: trigger)
+        guard success, !(item["OnDemand"] as? Bool ?? false), let check = item["loop_check"] as? PlistDict else { return }
+
+        let status = await installStatus(check)
+        guard status.needsAction else { return }
+        let restartAction = item["RestartAction"] as? String ?? "None"
+        if LoopGuard.restartActionsThatFinalize.contains(restartAction) {
+            recordPendingRestart(name: name, version: version, catalogFingerprint: fingerprint)
+            return
+        }
+        let reprobeHours = intPref("LoopReprobeHours") ?? 24
+        let hours = min(reprobeHours > 0 ? reprobeHours : 24, maxSuppressionDays * 24)
+        let display = DisplayAndLog.main
+        display.warning("Looping install detected: \(name) v\(version) — \(LoopGuard.nonConvergenceReason); paused for \(hours)h")
+        display.warning("Needs install because \(status.trigger?.describe() ?? "an unnamed check")")
+        markNonConverged(name: name, version: version, catalogFingerprint: fingerprint, reprobeHours: reprobeHours, trigger: status.trigger)
+    }
 }

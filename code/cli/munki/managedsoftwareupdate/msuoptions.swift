@@ -77,6 +77,14 @@ struct MSUConfigOptions: ParsableArguments {
     @Flag(name: .long,
           help: "Clear 'bootstrapping' mode for managedsoftwareupdate and exit.")
     var clearBootstrapMode = false
+
+    @Flag(name: .long,
+          help: "Show packages currently paused by the install-loop guard and exit.")
+    var loopStatus = false
+
+    @Option(name: .long,
+            help: "Clear install-loop suppression for a package (or 'all') and exit.")
+    var clearLoop: String = ""
 }
 
 struct MSUOtherOptions: ParsableArguments {

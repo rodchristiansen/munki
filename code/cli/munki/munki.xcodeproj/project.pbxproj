@@ -240,11 +240,17 @@
 		C0684DE02DBFDD530091E774 /* munkistatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D9C2A52C62C12E0019A067 /* munkistatus.swift */; };
 		C0684DE12DBFDD6C0091E774 /* reports.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07074DE2C33B9A000B86310 /* reports.swift */; };
 		0A4D219558C2440894841BEB /* sessionlog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE2E09170FB4CE9A796DF10 /* sessionlog.swift */; };
+		C04FCB9D225E57F5B330C080 /* loopguard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 501D4922FFE3E0ADCA560497 /* loopguard.swift */; };
 		C289653C2BC44CB2858E062B /* sessionlog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE2E09170FB4CE9A796DF10 /* sessionlog.swift */; };
+		B82A2074BB362D28949D1BC5 /* loopguard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 501D4922FFE3E0ADCA560497 /* loopguard.swift */; };
 		73CFFB31CAFB4263B6D9A11B /* sessionlog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE2E09170FB4CE9A796DF10 /* sessionlog.swift */; };
+		4E1E8F9661C2611D117EC8A3 /* loopguard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 501D4922FFE3E0ADCA560497 /* loopguard.swift */; };
 		FEA5CB94B4024AB0B0032ABA /* sessionlog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE2E09170FB4CE9A796DF10 /* sessionlog.swift */; };
+		04E4B24652A4D86A093F69A3 /* loopguard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 501D4922FFE3E0ADCA560497 /* loopguard.swift */; };
 		8F150C0024B1499EABE70095 /* sessionlog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE2E09170FB4CE9A796DF10 /* sessionlog.swift */; };
+		DC072A299AF6BEDFA58B5920 /* loopguard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 501D4922FFE3E0ADCA560497 /* loopguard.swift */; };
 		A3E20D80A8284B56BAC6BD8A /* sessionlog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE2E09170FB4CE9A796DF10 /* sessionlog.swift */; };
+		75CA9166C0008A5C30E5BD45 /* loopguard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 501D4922FFE3E0ADCA560497 /* loopguard.swift */; };
 		C0684DE22DBFDD930091E774 /* fetch.swift in Sources */ = {isa = PBXBuildFile; fileRef = C01792D22C6BC81B008CBC22 /* fetch.swift */; };
 		C0684DE32DBFDD930091E774 /* gurl.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07AED6E2C67DF6B00DE6119 /* gurl.swift */; };
 		C0684DE42DBFDD930091E774 /* urls.swift in Sources */ = {isa = PBXBuildFile; fileRef = C01792D82C6EC09C008CBC22 /* urls.swift */; };
@@ -302,6 +308,7 @@
 		C0684E752DC7BE9F0091E774 /* munkistatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D9C2A52C62C12E0019A067 /* munkistatus.swift */; };
 		C0684E762DC7BEB10091E774 /* reports.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07074DE2C33B9A000B86310 /* reports.swift */; };
 		52D5BB64674E4A588B491C47 /* sessionlog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE2E09170FB4CE9A796DF10 /* sessionlog.swift */; };
+		D5B79452AB3CB4E3FAE8283F /* loopguard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 501D4922FFE3E0ADCA560497 /* loopguard.swift */; };
 		C0684E792DC7BF2F0091E774 /* prefs.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07A6FAF2C2B22A400090743 /* prefs.swift */; };
 		C0684E7A2DC7BF590091E774 /* scriptutils.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D9C2A22C61939E0019A067 /* scriptutils.swift */; };
 		C0684E7B2DC7BF720091E774 /* munkihash.swift in Sources */ = {isa = PBXBuildFile; fileRef = C030A98E2C39C135007F0B34 /* munkihash.swift */; };
@@ -359,8 +366,10 @@
 		C07074DD2C33AE5F00B86310 /* munkilog.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07074DB2C33AE5F00B86310 /* munkilog.swift */; };
 		C07074DF2C33B9A000B86310 /* reports.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07074DE2C33B9A000B86310 /* reports.swift */; };
 		6FDC21FADE014849B59E0AA5 /* sessionlog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE2E09170FB4CE9A796DF10 /* sessionlog.swift */; };
+		414401D00277CCC43FF42FCC /* loopguard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 501D4922FFE3E0ADCA560497 /* loopguard.swift */; };
 		C07074E02C33B9A000B86310 /* reports.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07074DE2C33B9A000B86310 /* reports.swift */; };
 		66E51E58119A4765821F6486 /* sessionlog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE2E09170FB4CE9A796DF10 /* sessionlog.swift */; };
+		74FC3A40E3A01C8EDDF0EF32 /* loopguard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 501D4922FFE3E0ADCA560497 /* loopguard.swift */; };
 		C07074E52C34910F00B86310 /* osutils.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07074E42C34910F00B86310 /* osutils.swift */; };
 		C07074E62C34910F00B86310 /* osutils.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07074E42C34910F00B86310 /* osutils.swift */; };
 		C07074E82C34932400B86310 /* pkgutils.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07074E72C34932400B86310 /* pkgutils.swift */; };
@@ -456,6 +465,7 @@
 		C0AD963F2F3E58D80029A293 /* urlsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0AD96282F3E58D80029A293 /* urlsTests.swift */; };
 		C0AD96402F3E58D80029A293 /* versionutilsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0AD96292F3E58D80029A293 /* versionutilsTests.swift */; };
 		3EE5B6FF342B4FE8ADC324EF /* sessionlogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E774BC3E82224833A7002B48 /* sessionlogTests.swift */; };
+		A8F127ED094052C8F82A7EE6 /* loopguardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78399029E185D9535C489CC6 /* loopguardTests.swift */; };
 		9F7712948F17486CAABD6A91 /* yamlutils.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC921FEB5E2FB42F654C578E /* yamlutils.swift */; };
 		C0AD96412F3E58D80029A293 /* xattrTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0AD962A2F3E58D80029A293 /* xattrTests.swift */; };
 		C0AD96452F3E58F90029A293 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0AD96422F3E58F90029A293 /* main.swift */; };
@@ -520,6 +530,7 @@
 		C0D66AD12D2DBB7A009EF807 /* stderrout.swift in Sources */ = {isa = PBXBuildFile; fileRef = C008A0552D25B20E0073ADBA /* stderrout.swift */; };
 		C0D66AD22D2DBB80009EF807 /* reports.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07074DE2C33B9A000B86310 /* reports.swift */; };
 		B505A705D5C3475D8A2E1825 /* sessionlog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE2E09170FB4CE9A796DF10 /* sessionlog.swift */; };
+		440364A80EBAF413337BA49E /* loopguard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 501D4922FFE3E0ADCA560497 /* loopguard.swift */; };
 		C0D66AD42D2DBBED009EF807 /* dateutils.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D66AD32D2DBBED009EF807 /* dateutils.swift */; };
 		C0D66AD52D2DBBED009EF807 /* dateutils.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D66AD32D2DBBED009EF807 /* dateutils.swift */; };
 		C0D66AD72D2DBBED009EF807 /* dateutils.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D66AD32D2DBBED009EF807 /* dateutils.swift */; };
@@ -562,6 +573,7 @@
 		C0E994042C5BF4DC006FDF44 /* prefs.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07A6FAF2C2B22A400090743 /* prefs.swift */; };
 		C0E994052C5BF4E5006FDF44 /* reports.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07074DE2C33B9A000B86310 /* reports.swift */; };
 		2A8E209EBC144B1ABB3417EA /* sessionlog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE2E09170FB4CE9A796DF10 /* sessionlog.swift */; };
+		E68037B96C79829FE2E52930 /* loopguard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 501D4922FFE3E0ADCA560497 /* loopguard.swift */; };
 		C0E994062C5BF4F1006FDF44 /* constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07A6FB12C2B22D300090743 /* constants.swift */; };
 		C0E994072C5BF52E006FDF44 /* plistutils.swift in Sources */ = {isa = PBXBuildFile; fileRef = C01364422C2DD1BA008DB215 /* plistutils.swift */; };
 		C0E994082C5BF53D006FDF44 /* errors.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D00FB52C45BCB90021DA9C /* errors.swift */; };
@@ -861,6 +873,7 @@
 		C07074DB2C33AE5F00B86310 /* munkilog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = munkilog.swift; sourceTree = "<group>"; };
 		C07074DE2C33B9A000B86310 /* reports.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = reports.swift; sourceTree = "<group>"; };
 		7BE2E09170FB4CE9A796DF10 /* sessionlog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = sessionlog.swift; sourceTree = "<group>"; };
+		501D4922FFE3E0ADCA560497 /* loopguard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = loopguard.swift; sourceTree = "<group>"; };
 		C07074E12C3489FA00B86310 /* pkginfolib.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = pkginfolib.swift; sourceTree = "<group>"; };
 		C07074E42C34910F00B86310 /* osutils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = osutils.swift; sourceTree = "<group>"; };
 		C07074E72C34932400B86310 /* pkgutils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = pkgutils.swift; sourceTree = "<group>"; };
@@ -923,6 +936,7 @@
 		C0AD96282F3E58D80029A293 /* urlsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = urlsTests.swift; sourceTree = "<group>"; };
 		C0AD96292F3E58D80029A293 /* versionutilsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = versionutilsTests.swift; sourceTree = "<group>"; };
 		E774BC3E82224833A7002B48 /* sessionlogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = sessionlogTests.swift; sourceTree = "<group>"; };
+		78399029E185D9535C489CC6 /* loopguardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = loopguardTests.swift; sourceTree = "<group>"; };
 		C0AD962A2F3E58D80029A293 /* xattrTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = xattrTests.swift; sourceTree = "<group>"; };
 		C0AD96422F3E58F90029A293 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		C0AD96432F3E58F90029A293 /* precache_agent.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = precache_agent.entitlements; sourceTree = "<group>"; };
@@ -1353,6 +1367,7 @@
 				C0D9C29F2C6175A10019A067 /* processes.swift */,
 				C07074DE2C33B9A000B86310 /* reports.swift */,
 				7BE2E09170FB4CE9A796DF10 /* sessionlog.swift */,
+				501D4922FFE3E0ADCA560497 /* loopguard.swift */,
 				C06C213C2C88CACE0023E9D9 /* SignalHandler.swift */,
 				C0D9C27E2C5EA22D0019A067 /* socket */,
 				C043ED1E2C4822C70047C025 /* sqlite3.swift */,
@@ -1504,6 +1519,7 @@
 				C0AD96282F3E58D80029A293 /* urlsTests.swift */,
 				C0AD96292F3E58D80029A293 /* versionutilsTests.swift */,
 				E774BC3E82224833A7002B48 /* sessionlogTests.swift */,
+				78399029E185D9535C489CC6 /* loopguardTests.swift */,
 				C0AD962A2F3E58D80029A293 /* xattrTests.swift */,
 				C0AD96172F3E58D80029A293 /* fixtures */,
 				C05ED2822FDB5CBB00AFA64D /* dictutilsTests.swift */,
@@ -2087,6 +2103,7 @@
 				C00519AD2D2ADF5A0060DDB6 /* common.swift in Sources */,
 				C0D66AB52D2C82E4009EF807 /* cliutils.swift in Sources */,
 							A3E20D80A8284B56BAC6BD8A /* sessionlog.swift in Sources */,
+							75CA9166C0008A5C30E5BD45 /* loopguard.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2202,6 +2219,7 @@
 			
 				C52CCC4E3374479E8D7FA5DA /* yamlutils.swift in Sources */,
 							8F150C0024B1499EABE70095 /* sessionlog.swift in Sources */,
+							DC072A299AF6BEDFA58B5920 /* loopguard.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2244,6 +2262,7 @@
 			
 				8EA12F1628DE4BF890BB3366 /* yamlutils.swift in Sources */,
 							FEA5CB94B4024AB0B0032ABA /* sessionlog.swift in Sources */,
+							04E4B24652A4D86A093F69A3 /* loopguard.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2260,6 +2279,7 @@
 				C0684DF42DBFE21C0091E774 /* dmg.swift in Sources */,
 				C0684DE12DBFDD6C0091E774 /* reports.swift in Sources */,
 				0A4D219558C2440894841BEB /* sessionlog.swift in Sources */,
+				C04FCB9D225E57F5B330C080 /* loopguard.swift in Sources */,
 				C0684DEE2DBFDFF50091E774 /* LaunchdJob.swift in Sources */,
 				C0684DDC2DBFDCF10091E774 /* fileutils.swift in Sources */,
 				C0684DD82DBFDC1B0091E774 /* download.swift in Sources */,
@@ -2314,6 +2334,7 @@
 				C028DB2A2F1EC65D00290CBF /* fileutils.swift in Sources */,
 				C0684E372DC040EB0091E774 /* stderrout.swift in Sources */,
 							73CFFB31CAFB4263B6D9A11B /* sessionlog.swift in Sources */,
+							4E1E8F9661C2611D117EC8A3 /* loopguard.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2362,6 +2383,7 @@
 				C0AD963F2F3E58D80029A293 /* urlsTests.swift in Sources */,
 				C0AD96402F3E58D80029A293 /* versionutilsTests.swift in Sources */,
 				3EE5B6FF342B4FE8ADC324EF /* sessionlogTests.swift in Sources */,
+				A8F127ED094052C8F82A7EE6 /* loopguardTests.swift in Sources */,
 				9F7712948F17486CAABD6A91 /* yamlutils.swift in Sources */,
 				C0AD96412F3E58D80029A293 /* xattrTests.swift in Sources */,
 				C0684E6E2DC73C590091E774 /* stderrout.swift in Sources */,
@@ -2386,6 +2408,7 @@
 				C0684E9C2DC7E5810091E774 /* appusage.swift in Sources */,
 				C0684E762DC7BEB10091E774 /* reports.swift in Sources */,
 				52D5BB64674E4A588B491C47 /* sessionlog.swift in Sources */,
+				D5B79452AB3CB4E3FAE8283F /* loopguard.swift in Sources */,
 				C0684E742DC7BE910091E774 /* munkilog.swift in Sources */,
 				C0684E8F2DC7E2F90091E774 /* installinfo.swift in Sources */,
 				C0684E7E2DC7C3850091E774 /* osutils.swift in Sources */,
@@ -2486,6 +2509,7 @@
 				C0209B862C63C9FD007664A0 /* stoprequested.swift in Sources */,
 				C07074DF2C33B9A000B86310 /* reports.swift in Sources */,
 				6FDC21FADE014849B59E0AA5 /* sessionlog.swift in Sources */,
+				414401D00277CCC43FF42FCC /* loopguard.swift in Sources */,
 				C058EF2D2DCD11F2002775E0 /* tempfileutils.swift in Sources */,
 			
 				1FD0D19BBFAD4956B46BA533 /* yamlutils.swift in Sources */,
@@ -2556,6 +2580,7 @@
 				C030A9902C39C135007F0B34 /* munkihash.swift in Sources */,
 				C07074E02C33B9A000B86310 /* reports.swift in Sources */,
 				66E51E58119A4765821F6486 /* sessionlog.swift in Sources */,
+				74FC3A40E3A01C8EDDF0EF32 /* loopguard.swift in Sources */,
 				C07AED6C2C66F56C00DE6119 /* manifests.swift in Sources */,
 				C07074E62C34910F00B86310 /* osutils.swift in Sources */,
 				C0684E3E2DC19C7A0091E774 /* BlockingApplications.swift in Sources */,
@@ -2705,6 +2730,7 @@
 				C0D66AC92D2CA675009EF807 /* constants.swift in Sources */,
 				C0D66AD22D2DBB80009EF807 /* reports.swift in Sources */,
 				B505A705D5C3475D8A2E1825 /* sessionlog.swift in Sources */,
+				440364A80EBAF413337BA49E /* loopguard.swift in Sources */,
 				C0D66ACB2D2CA78C009EF807 /* osutils.swift in Sources */,
 				C0D66AC62D2CA2DA009EF807 /* munkilog.swift in Sources */,
 			);
@@ -2748,6 +2774,7 @@
 				C008A0452D1641B90073ADBA /* constants.swift in Sources */,
 				C008A0532D18BBC90073ADBA /* launchd.swift in Sources */,
 							C289653C2BC44CB2858E062B /* sessionlog.swift in Sources */,
+							B82A2074BB362D28949D1BC5 /* loopguard.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2759,6 +2786,7 @@
 				C0EC07702F044AC70051894F /* stringutils.swift in Sources */,
 				C0E994052C5BF4E5006FDF44 /* reports.swift in Sources */,
 				2A8E209EBC144B1ABB3417EA /* sessionlog.swift in Sources */,
+				E68037B96C79829FE2E52930 /* loopguard.swift in Sources */,
 				C0E994032C5BF4CF006FDF44 /* munkilog.swift in Sources */,
 				C0E993F82C5BEDAB006FDF44 /* removepackages.swift in Sources */,
 				C0E994062C5BF4F1006FDF44 /* constants.swift in Sources */,
