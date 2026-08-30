@@ -33,7 +33,7 @@ func initMunkiDirs() -> Bool {
     for subdir in [
         "Archives",
         "Cache",
-        "Logs",
+        "logs",
         "catalogs",
         "client_resources",
         "icons",

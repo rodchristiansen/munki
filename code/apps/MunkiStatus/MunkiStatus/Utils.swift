@@ -20,7 +20,7 @@ func logFilePref() -> String {
      */
     let value = CFPreferencesCopyAppValue("LogFile" as CFString, "ManagedInstalls" as CFString)
     if value == nil {
-        return "/Library/Managed Installs/Logs/ManagedSoftwareUpdate.log"
+        return "/Library/Managed Installs/logs/ManagedSoftwareUpdate.log"
     }
     return value! as! String
 }
