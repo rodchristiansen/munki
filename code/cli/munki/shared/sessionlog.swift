@@ -281,7 +281,7 @@ final class SessionLog {
     }
 
     /// Closes the session: finalises session.json and regenerates reports/.
-    func end(status: String, summary: SessionSummary) {
+    func end(status: String, summary: SessionSummary, report: [String: Any] = [:]) {
         lock.lock(); defer { lock.unlock() }
         guard isActive, var rec = record else { return }
         let now = Date()
@@ -295,7 +295,7 @@ final class SessionLog {
         record = rec
         writeSessionRecord()
         writeLine("INFO", "Session ended: \(status) (\(rec.durationSeconds ?? 0)s)")
-        generateReports()
+        generateReports(report: report)
         closeFiles()
         isActive = false
     }
@@ -471,7 +471,7 @@ final class SessionLog {
         eventsFile = nil
     }
 
-    private func generateReports() {
+    private func generateReports(report: [String: Any]) {
         let dirs = Self.allSessionDirs(logsDir: logsDir)
         let fm = FileManager.default
 
@@ -501,7 +501,7 @@ final class SessionLog {
         }
         writeReport(events, name: "events.json")
 
-        let items = Self.buildItems(from: Report.shared.report, session: record)
+        let items = Self.buildItems(from: report, session: record)
         if !items.isEmpty {
             writeReport(items, name: "items.json")
         }
@@ -515,7 +515,7 @@ final class SessionLog {
 
     /// Builds items.json from the run report: one record per managed item,
     /// carrying what happened to it this run.
-    static func buildItems(from report: PlistDict, session: SessionRecord?) -> [SessionItemRecord] {
+    static func buildItems(from report: [String: Any], session: SessionRecord?) -> [SessionItemRecord] {
         let sessionId = session?.sessionId ?? ""
         let now = isoTimestamp(Date())
         var records = [String: SessionItemRecord]()
@@ -545,7 +545,7 @@ final class SessionLog {
             return rec
         }
 
-        for entry in report["ManagedInstalls"] as? [PlistDict] ?? [] {
+        for entry in report["ManagedInstalls"] as? [[String: Any]] ?? [] {
             let name = entry["name"] as? String ?? ""
             guard !name.isEmpty else { continue }
             var rec = record(for: name, version: entry["version_to_install"] as? String ?? entry["installed_version"] as? String ?? "",
@@ -560,7 +560,7 @@ final class SessionLog {
             }
             records[name] = rec
         }
-        for entry in report["ItemsToRemove"] as? [PlistDict] ?? [] {
+        for entry in report["ItemsToRemove"] as? [[String: Any]] ?? [] {
             let name = entry["name"] as? String ?? ""
             guard !name.isEmpty else { continue }
             var rec = record(for: name, version: entry["installed_version"] as? String ?? "",
@@ -569,7 +569,7 @@ final class SessionLog {
             rec.lastAttemptStatus = "Pending"
             records[name] = rec
         }
-        for entry in report["InstallResults"] as? [PlistDict] ?? [] {
+        for entry in report["InstallResults"] as? [[String: Any]] ?? [] {
             let name = entry["name"] as? String ?? ""
             guard !name.isEmpty else { continue }
             var rec = record(for: name, version: entry["version"] as? String ?? "",
@@ -589,7 +589,7 @@ final class SessionLog {
             rec.lastAttemptStatus = rec.currentStatus
             records[name] = rec
         }
-        for entry in report["RemovalResults"] as? [PlistDict] ?? [] {
+        for entry in report["RemovalResults"] as? [[String: Any]] ?? [] {
             let name = entry["name"] as? String ?? ""
             guard !name.isEmpty else { continue }
             var rec = record(for: name, version: "", displayName: entry["display_name"] as? String, itemType: "managed_uninstalls")
@@ -779,19 +779,19 @@ final class SessionLog {
 extension SessionLog {
     /// Derives the run summary from the run report (ItemsToInstall, ItemsToRemove,
     /// InstallResults, RemovalResults, ManagedInstalls).
-    static func summary(from report: PlistDict) -> SessionSummary {
+    static func summary(from report: [String: Any]) -> SessionSummary {
         var summary = SessionSummary()
-        let toInstall = report["ItemsToInstall"] as? [PlistDict] ?? []
-        let toRemove = report["ItemsToRemove"] as? [PlistDict] ?? []
+        let toInstall = report["ItemsToInstall"] as? [[String: Any]] ?? []
+        let toRemove = report["ItemsToRemove"] as? [[String: Any]] ?? []
         summary.installs = toInstall.filter { ($0["installed_version"] as? String ?? "").isEmpty }.count
         summary.updates = toInstall.count - summary.installs
         summary.removals = toRemove.count
         summary.totalActions = toInstall.count + toRemove.count
-        let results = (report["InstallResults"] as? [PlistDict] ?? []) + (report["RemovalResults"] as? [PlistDict] ?? [])
+        let results = (report["InstallResults"] as? [[String: Any]] ?? []) + (report["RemovalResults"] as? [[String: Any]] ?? [])
         summary.successes = results.filter { ($0["status"] as? Int ?? -1) == 0 }.count
         summary.failures = results.count - summary.successes
         var names = [String]()
-        for entry in (report["ManagedInstalls"] as? [PlistDict] ?? []) + toRemove {
+        for entry in (report["ManagedInstalls"] as? [[String: Any]] ?? []) + toRemove {
             if let name = entry["name"] as? String, !name.isEmpty, !names.contains(name) { names.append(name) }
         }
         summary.packagesHandled = names
