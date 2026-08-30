@@ -104,6 +104,13 @@ struct SessionItemRecord: Codable {
     var lastError: String
     var lastWarning: String?
     var actionPerformed: String?
+    /// The warning split into its parts, so a consumer can render them as
+    /// separate messages; `lastWarning` holds them joined.
+    var warningMessages: [String]? = nil
+    var installLoopDetected: Bool? = nil
+    var statusReason: String? = nil
+    var statusReasonCode: String? = nil
+    var detectionMethod: String? = nil
 }
 
 /// Minimal JSON value so environment metadata can hold mixed scalars.
@@ -501,7 +508,7 @@ final class SessionLog {
         }
         writeReport(events, name: "events.json")
 
-        let items = Self.buildItems(from: report, session: record)
+        let items = Self.buildItems(from: report, session: record, loopSuppressed: LoopGuard.shared.suppressedReport())
         if !items.isEmpty {
             writeReport(items, name: "items.json")
         }
@@ -515,7 +522,9 @@ final class SessionLog {
 
     /// Builds items.json from the run report: one record per managed item,
     /// carrying what happened to it this run.
-    static func buildItems(from report: [String: Any], session: SessionRecord?) -> [SessionItemRecord] {
+    static func buildItems(from report: [String: Any], session: SessionRecord?,
+                           loopSuppressed: [LoopSuppressedReportItem] = []) -> [SessionItemRecord]
+    {
         let sessionId = session?.sessionId ?? ""
         let now = isoTimestamp(Date())
         var records = [String: SessionItemRecord]()
@@ -628,6 +637,34 @@ final class SessionLog {
                 rec.lastSeenInSession = sessionId
             }
             records[name] = rec
+        }
+        // Packages the install-loop guard is holding stay in items.json for as
+        // long as the hold lasts, whether or not this run touched them.
+        for entry in loopSuppressed {
+            var rec = records[entry.packageName]
+                ?? record(for: entry.packageName, version: entry.version, displayName: nil, itemType: "managed_installs")
+            rec.detectionMethod = "none"
+            if entry.pendingRestart {
+                rec.currentStatus = "Pending"
+                rec.lastAttemptStatus = "Pending"
+                rec.actionPerformed = "restart_deferred"
+                rec.statusReasonCode = "pending_reboot"
+                rec.statusReason = entry.reason
+                rec.installLoopDetected = false
+            } else {
+                let parts = [entry.reason] + (entry.cause.map { [$0] } ?? [])
+                rec.currentStatus = "Warning"
+                rec.lastAttemptStatus = "Warning"
+                rec.actionPerformed = "loop_suppressed"
+                rec.statusReasonCode = "loop_suppressed"
+                rec.warningMessages = parts
+                rec.lastWarning = parts.joined(separator: "\n")
+                rec.statusReason = rec.lastWarning
+                rec.installLoopDetected = true
+                if rec.warningCount == 0 { rec.warningCount = 1 }
+            }
+            if rec.lastSeenInSession.isEmpty { rec.lastSeenInSession = sessionId }
+            records[entry.packageName] = rec
         }
         return order.compactMap { records[$0] }
     }
