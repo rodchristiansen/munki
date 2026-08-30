@@ -125,7 +125,7 @@ func munkiPref(_ prefName: String) -> Any? {
         "ShowRemovalDetail": false,
         "InstallRequiresLogout": false,
         "CheckResultsCacheSeconds": DEFAULT_GUI_CACHE_AGE_SECS,
-        "LogFile": "/Library/Managed Installs/Logs/ManagedSoftwareUpdate.log",
+        "LogFile": "/Library/Managed Installs/logs/ManagedSoftwareUpdate.log",
         "MSCOfferToQuitBlockingApps": false,
         "MSCOfferToForceQuitBlockingApps": false,
         "MSCOfferToUpdateOthers": false,
@@ -152,7 +152,7 @@ func logFilePref() -> String {
      */
     let value = CFPreferencesCopyAppValue("LogFile" as CFString, "ManagedInstalls" as CFString)
     if value == nil {
-        return "/Library/Managed Installs/Logs/ManagedSoftwareUpdate.log"
+        return "/Library/Managed Installs/logs/ManagedSoftwareUpdate.log"
     }
     return value! as! String
 }

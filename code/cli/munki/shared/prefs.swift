@@ -45,7 +45,7 @@ let DEFAULT_PREFS: [String: Any] = [
     "InstallAppleSoftwareUpdates": false,
     "LastNotifiedDate": NSDate(timeIntervalSince1970: 0),
     // "LocalOnlyManifest": None,
-    "LogFile": "\(DEFAULT_MANAGED_INSTALLS_DIR)/Logs/ManagedSoftwareUpdate.log",
+    "LogFile": "\(DEFAULT_MANAGED_INSTALLS_DIR)/logs/ManagedSoftwareUpdate.log",
     "LoggingLevel": 1,
     "LogToSyslog": false,
     "ManagedInstallDir": DEFAULT_MANAGED_INSTALLS_DIR,

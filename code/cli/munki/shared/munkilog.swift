@@ -32,7 +32,7 @@ func mainLogDir() -> String {
     if let logFile = pref("LogFile") as? String {
         return (logFile as NSString).deletingLastPathComponent
     }
-    return managedInstallsDir(subpath: "Logs")
+    return managedInstallsDir(subpath: "logs")
 }
 
 /// Returns the path to a log with the given name in the same directory as our main log
@@ -49,6 +49,7 @@ func munkiLog(_ message: String, logFile: String = "", logLevel: OSLogType = .de
     dateformatter.formatOptions = [.withInternetDateTime, .withSpaceBetweenDateAndTime, .withFractionalSeconds]
     let timestamp = dateformatter.string(from: Date())
     let logString = "\(timestamp) \(message)\n"
+    SessionLog.shared.mirror(message, logFile: logFile)
     var logPath = ""
     var subsystem = "com.googlecode.munki.managedsoftwareupdate"
     if logFile.isEmpty {
