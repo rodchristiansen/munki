@@ -240,6 +240,11 @@
 		C0684DE02DBFDD530091E774 /* munkistatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D9C2A52C62C12E0019A067 /* munkistatus.swift */; };
 		C0684DE12DBFDD6C0091E774 /* reports.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07074DE2C33B9A000B86310 /* reports.swift */; };
 		0A4D219558C2440894841BEB /* sessionlog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE2E09170FB4CE9A796DF10 /* sessionlog.swift */; };
+		C289653C2BC44CB2858E062B /* sessionlog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE2E09170FB4CE9A796DF10 /* sessionlog.swift */; };
+		73CFFB31CAFB4263B6D9A11B /* sessionlog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE2E09170FB4CE9A796DF10 /* sessionlog.swift */; };
+		FEA5CB94B4024AB0B0032ABA /* sessionlog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE2E09170FB4CE9A796DF10 /* sessionlog.swift */; };
+		8F150C0024B1499EABE70095 /* sessionlog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE2E09170FB4CE9A796DF10 /* sessionlog.swift */; };
+		A3E20D80A8284B56BAC6BD8A /* sessionlog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE2E09170FB4CE9A796DF10 /* sessionlog.swift */; };
 		C0684DE22DBFDD930091E774 /* fetch.swift in Sources */ = {isa = PBXBuildFile; fileRef = C01792D22C6BC81B008CBC22 /* fetch.swift */; };
 		C0684DE32DBFDD930091E774 /* gurl.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07AED6E2C67DF6B00DE6119 /* gurl.swift */; };
 		C0684DE42DBFDD930091E774 /* urls.swift in Sources */ = {isa = PBXBuildFile; fileRef = C01792D82C6EC09C008CBC22 /* urls.swift */; };
@@ -2081,6 +2086,7 @@
 				C0D66AB42D2C82CF009EF807 /* prefs.swift in Sources */,
 				C00519AD2D2ADF5A0060DDB6 /* common.swift in Sources */,
 				C0D66AB52D2C82E4009EF807 /* cliutils.swift in Sources */,
+							A3E20D80A8284B56BAC6BD8A /* sessionlog.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2195,6 +2201,7 @@
 				C058EF2A2DCD11F2002775E0 /* tempfileutils.swift in Sources */,
 			
 				C52CCC4E3374479E8D7FA5DA /* yamlutils.swift in Sources */,
+							8F150C0024B1499EABE70095 /* sessionlog.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2236,6 +2243,7 @@
 				C09616C82DEE6DF400281B6B /* UNIXProcessInfo.swift in Sources */,
 			
 				8EA12F1628DE4BF890BB3366 /* yamlutils.swift in Sources */,
+							FEA5CB94B4024AB0B0032ABA /* sessionlog.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2305,6 +2313,7 @@
 				C0684E362DC040B20091E774 /* munkilog.swift in Sources */,
 				C028DB2A2F1EC65D00290CBF /* fileutils.swift in Sources */,
 				C0684E372DC040EB0091E774 /* stderrout.swift in Sources */,
+							73CFFB31CAFB4263B6D9A11B /* sessionlog.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2738,6 +2747,7 @@
 				C008A0402D1640170073ADBA /* server.swift in Sources */,
 				C008A0452D1641B90073ADBA /* constants.swift in Sources */,
 				C008A0532D18BBC90073ADBA /* launchd.swift in Sources */,
+							C289653C2BC44CB2858E062B /* sessionlog.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

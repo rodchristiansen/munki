@@ -622,7 +622,8 @@ struct ManagedSoftwareUpdate: AsyncParsableCommand {
         let sessionSummary = SessionLog.summary(from: Report.shared.report)
         SessionLog.shared.end(
             status: sessionSummary.failures > 0 || sessionSummary.errors > 0 ? "partial_failure" : "completed",
-            summary: sessionSummary
+            summary: sessionSummary,
+            report: Report.shared.report
         )
         munkiLog("### Ending managedsoftwareupdate run ###")
         if !otherOptions.quiet {
