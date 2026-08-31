@@ -241,6 +241,7 @@
 		C0684DE12DBFDD6C0091E774 /* reports.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07074DE2C33B9A000B86310 /* reports.swift */; };
 		0A4D219558C2440894841BEB /* sessionlog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE2E09170FB4CE9A796DF10 /* sessionlog.swift */; };
 		C04FCB9D225E57F5B330C080 /* loopguard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 501D4922FFE3E0ADCA560497 /* loopguard.swift */; };
+		3CA31252A1DF513291A5F480 /* loopguard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 501D4922FFE3E0ADCA560497 /* loopguard.swift */; };
 		C289653C2BC44CB2858E062B /* sessionlog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE2E09170FB4CE9A796DF10 /* sessionlog.swift */; };
 		B82A2074BB362D28949D1BC5 /* loopguard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 501D4922FFE3E0ADCA560497 /* loopguard.swift */; };
 		73CFFB31CAFB4263B6D9A11B /* sessionlog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE2E09170FB4CE9A796DF10 /* sessionlog.swift */; };
@@ -2621,6 +2622,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3CA31252A1DF513291A5F480 /* loopguard.swift in Sources */,
 				C07A6FDC2C2CF19600090743 /* cliutils.swift in Sources */,
 				C0D00FA32C457E5F0021DA9C /* fileutils.swift in Sources */,
 				C01364452C2DD1BA008DB215 /* plistutils.swift in Sources */,
