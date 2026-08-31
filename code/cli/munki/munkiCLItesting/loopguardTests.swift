@@ -275,6 +275,12 @@ final class LoopGuardTests {
         #expect(LoopGuard.catalogFingerprint(for: pkginfo) != LoopGuard.catalogFingerprint(for: changed))
         let stamped: PlistDict = ["name": "Foo", "loop_fingerprint": "abc"]
         #expect(LoopGuard.catalogFingerprint(for: stamped) == LoopGuard.computeFingerprint("abc|\(LoopGuard.clientVersion)"))
+        // a makecatalogs stamp and a client's own computation agree
+        var stampedCopy = pkginfo
+        stampedCopy["loop_fingerprint"] = LoopGuard.canonicalFingerprint(for: pkginfo)
+        #expect(LoopGuard.catalogFingerprint(for: stampedCopy) == LoopGuard.catalogFingerprint(for: pkginfo))
+        #expect(LoopGuard.canonicalFingerprint(for: stampedCopy) == LoopGuard.canonicalFingerprint(for: pkginfo))
+        #expect(LoopGuard.canonicalFingerprint(for: pkginfo) != LoopGuard.canonicalFingerprint(for: changed))
     }
 
     @Test func historyRebuildsFromEventsAndArchives() throws {

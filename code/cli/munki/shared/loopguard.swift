@@ -236,33 +236,30 @@ final class LoopGuard {
         return String(digest.map { String(format: "%02x", $0) }.joined().prefix(16))
     }
 
-    /// Fingerprint of everything in a pkginfo that decides whether and how an
-    /// item installs. A server-stamped loop_fingerprint wins when present. The
-    /// running munki version is folded in so a client upgrade clears standing
-    /// suppressions once.
+    /// Fingerprint of a catalog item: SHA256 (first 16 hex) of the item
+    /// serialized as a sorted XML plist with any existing loop_fingerprint
+    /// removed. makecatalogs stamps this onto every item as loop_fingerprint;
+    /// a client computes the same value when the stamp is absent, so a
+    /// stamped and an unstamped copy of the same item agree.
+    static func canonicalFingerprint(for pkginfo: PlistDict) -> String {
+        var item = pkginfo
+        item["loop_fingerprint"] = nil
+        guard let data = try? PropertyListSerialization.data(fromPropertyList: item, format: .xml, options: 0),
+              let text = String(data: data, encoding: .utf8)
+        else {
+            return computeFingerprint(item.keys.sorted().map { "\($0)=\(String(describing: item[$0]!))" }.joined(separator: "|"))
+        }
+        return computeFingerprint(text)
+    }
+
+    /// Fingerprint used to decide whether a package's catalog entry changed:
+    /// the item's own fingerprint (the server stamp when present, computed
+    /// otherwise) folded with the running client version, so a client upgrade
+    /// clears standing suppressions once.
     static func catalogFingerprint(for pkginfo: PlistDict) -> String {
-        if let stamped = pkginfo["loop_fingerprint"] as? String, !stamped.trimmingCharacters(in: .whitespaces).isEmpty {
-            return computeFingerprint("\(stamped)|\(clientVersion)")
-        }
-        var parts = [String]()
-        for key in ["version", "installcheck_script", "version_script", "preinstall_script", "postinstall_script",
-                    "uninstall_script", "installer_item_hash", "installer_item_location", "installer_type", "uninstall_method"]
-        {
-            parts.append(pkginfo.stringValue(forKey: key) ?? "")
-        }
-        for item in pkginfo["installs"] as? [PlistDict] ?? [] {
-            let type = item["type"] as? String ?? ""
-            let path = item["path"] as? String ?? ""
-            let md5 = item["md5checksum"] as? String ?? ""
-            let version = item.stringValue(forKey: item["version_comparison_key"] as? String ?? "CFBundleShortVersionString") ?? ""
-            let bundleID = item["CFBundleIdentifier"] as? String ?? ""
-            parts.append("\(type):\(path):\(md5):\(version):\(bundleID);")
-        }
-        for receipt in pkginfo["receipts"] as? [PlistDict] ?? [] {
-            parts.append("\(receipt["packageid"] as? String ?? ""):\(receipt.stringValue(forKey: "version") ?? "");")
-        }
-        parts.append(clientVersion)
-        return computeFingerprint(parts.joined(separator: "|"))
+        let stamped = (pkginfo["loop_fingerprint"] as? String ?? "").trimmingCharacters(in: .whitespaces)
+        let own = stamped.isEmpty ? canonicalFingerprint(for: pkginfo) : stamped
+        return computeFingerprint("\(own)|\(clientVersion)")
     }
 
     /// The subset of a pkginfo the install phase needs to re-run the status

@@ -218,6 +218,8 @@ struct CatalogsMaker {
                     pkginfo[key] = nil
                 }
             }
+            // stamp the item so a client can tell when its catalog entry changed
+            pkginfo["loop_fingerprint"] = LoopGuard.canonicalFingerprint(for: pkginfo)
             // sanity checking
             if !options.skipPkgCheck {
                 let verified = verify(pkginfoIdentifier, pkginfo)
