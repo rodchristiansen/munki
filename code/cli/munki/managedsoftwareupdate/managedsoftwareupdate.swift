@@ -52,6 +52,14 @@ struct ManagedSoftwareUpdate: AsyncParsableCommand {
     var shouldNotifyUser = false
 
     private func handleConfigOptions() throws {
+        if configOptions.loopStatus {
+            printLoopStatus()
+            throw ExitCode(0)
+        }
+        if !configOptions.clearLoop.isEmpty {
+            clearLoopSuppression(configOptions.clearLoop)
+            throw ExitCode(0)
+        }
         if configOptions.showConfig {
             printConfig()
             throw ExitCode(0)
@@ -79,6 +87,36 @@ struct ManagedSoftwareUpdate: AsyncParsableCommand {
             }
             print("Bootstrap mode cleared.")
             throw ExitCode(0)
+        }
+    }
+
+    /// Prints the install-loop guard's view of every paused package.
+    private func printLoopStatus() {
+        let guardian = LoopGuard.shared
+        let suppressed = guardian.suppressedPackages()
+        if suppressed.isEmpty {
+            print("No packages are currently suppressed by loop guard.")
+            return
+        }
+        print("\(suppressed.count) package(s) currently suppressed:")
+        print("")
+        for entry in suppressed {
+            print(guardian.diagnosticInfo(name: entry.name))
+            print("")
+        }
+        print("Clear with: managedsoftwareupdate --clear-loop <name> or --clear-loop all")
+    }
+
+    /// Clears install-loop suppression for one package, or every package.
+    private func clearLoopSuppression(_ target: String) {
+        let guardian = LoopGuard.shared
+        if target.lowercased() == "all" {
+            let count = guardian.clearAll()
+            print("[SUCCESS] Cleared loop suppression for \(count) package(s).")
+        } else if guardian.clearLoop(name: target) {
+            print("[SUCCESS] Cleared loop suppression for '\(target)'.")
+        } else {
+            print("[INFO] No loop suppression found for '\(target)'.")
         }
     }
 
@@ -556,6 +594,8 @@ struct ManagedSoftwareUpdate: AsyncParsableCommand {
             "munkistatusoutput": otherOptions.munkistatusoutput,
             "munki_version": getVersion(),
         ])
+        LoopGuard.clientVersion = getVersion()
+        LoopGuard.shared.setCurrentSession(id: SessionLog.shared.sessionId)
 
         // install handlers for SIGINT and SIGTERM
         let sigintSrc = installSignalHandler(SIGINT, logger: MunkiLogger.standard)
@@ -614,6 +654,7 @@ struct ManagedSoftwareUpdate: AsyncParsableCommand {
         reconfigureOptionsForInstall()
         await handleInstallTasks()
 
+        Report.shared.record(LoopGuard.shared.writeReports().map(\.plist), to: "LoopSuppressed")
         display.majorStatus("Finishing...")
         await doFinishingTasks(runtype: runtype)
         sendDockUpdateNotification()

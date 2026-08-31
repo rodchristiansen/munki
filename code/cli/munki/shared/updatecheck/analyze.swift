@@ -257,21 +257,13 @@ func processInstall(
     processedItem["developer"] = pkginfo["developer"]
     processedItem["icon_name"] = pkginfo["icon_name"]
 
-    let installedState = await installedState(pkginfo)
-    do {
-        let detection: String = if pkginfo["installcheck_script"] != nil { "script" }
-            else if pkginfo["installs"] != nil { "installs_array" }
-            else if pkginfo["receipts"] != nil { "receipts" }
-            else { "none" }
-        let (status, reason, code) = switch installedState {
-        case .thisVersionInstalled: ("installed", "\(name)-\(version) is installed", "version_match")
-        case .newerVersionInstalled: ("installed", "A newer version of \(name) than \(version) is installed", "version_match")
-        case .thisVersionNotInstalled: ("pending", "\(name)-\(version) is not installed", "not_installed")
-        }
-        SessionLog.shared.logStatusCheck(name: name, version: version, status: status, statusReason: reason,
-                                         statusReasonCode: code, detectionMethod: detection,
-                                         needsAction: installedState == .thisVersionNotInstalled)
-    }
+    let status = await installStatus(pkginfo)
+    let installedState = status.state
+    SessionLog.shared.logStatusCheck(name: name, version: version,
+                                     status: status.needsAction ? "pending" : "installed",
+                                     statusReason: status.detail, statusReasonCode: status.reasonCode,
+                                     detectionMethod: status.detectionMethod,
+                                     installedVersion: status.installedVersion, needsAction: status.needsAction)
     if installedState == .thisVersionNotInstalled {
         if !dependenciesMet {
             // we should not attempt to install
@@ -283,6 +275,39 @@ func processInstall(
             appendToProcessedManagedInstalls(processedItem)
             return false
         }
+
+        // A package that keeps wanting to install right after it installed is
+        // looping; the guard pauses it and records why it keeps coming back.
+        if !(pkginfo["OnDemand"] as? Bool ?? false) {
+            let fingerprint = LoopGuard.catalogFingerprint(for: pkginfo)
+            let restart = LoopGuard.shared.shouldDeferForRestart(name: name, catalogFingerprint: fingerprint)
+            if restart.defer {
+                display.info(restart.reason)
+                SessionLog.shared.logStatusCheck(name: name, version: version, status: "deferred", statusReason: restart.reason,
+                                                 statusReasonCode: "pending_reboot", detectionMethod: "none",
+                                                 installedVersion: status.installedVersion, needsAction: false)
+                return true
+            }
+            let loop = LoopGuard.shared.shouldSuppress(name: name, version: version, catalogFingerprint: fingerprint, trigger: status.trigger)
+            if loop.suppress {
+                display.warning(loop.reason)
+                if let cause = LoopGuard.shared.suppressionCause(name: name) {
+                    display.warning(cause)
+                }
+                SessionLog.shared.logStatusCheck(name: name, version: version, status: "suppressed", statusReason: loop.reason,
+                                                 statusReasonCode: "loop_suppressed", detectionMethod: "none",
+                                                 installedVersion: status.installedVersion, needsAction: false)
+                return true
+            }
+            if loop.reason.hasPrefix("Auto-cleared") {
+                display.info("Loop suppression for \(name) cleared: \(loop.reason)")
+            }
+            processedItem["loop_catalog_fingerprint"] = fingerprint
+        }
+        if let trigger = status.trigger {
+            processedItem["loop_trigger"] = trigger.plist
+        }
+        processedItem["loop_check"] = LoopGuard.checkInfo(for: pkginfo)
 
         display.detail("Need to install \(manifestItemName)")
         processedItem["installed"] = false
