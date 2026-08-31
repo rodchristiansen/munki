@@ -286,6 +286,12 @@ func processInstall(
                 SessionLog.shared.logStatusCheck(name: name, version: version, status: "deferred", statusReason: restart.reason,
                                                  statusReasonCode: "pending_reboot", detectionMethod: "none",
                                                  installedVersion: status.installedVersion, needsAction: false)
+                // Stays on the report, marked installed so nothing is attempted,
+                // with the reason as its note.
+                processedItem["installed"] = true
+                processedItem["restart_deferred"] = true
+                processedItem["note"] = restart.reason
+                appendToProcessedManagedInstalls(processedItem)
                 return true
             }
             let loop = LoopGuard.shared.shouldSuppress(name: name, version: version, catalogFingerprint: fingerprint, trigger: status.trigger)
@@ -297,6 +303,12 @@ func processInstall(
                 SessionLog.shared.logStatusCheck(name: name, version: version, status: "suppressed", statusReason: loop.reason,
                                                  statusReasonCode: "loop_suppressed", detectionMethod: "none",
                                                  installedVersion: status.installedVersion, needsAction: false)
+                // Stays on the report, marked installed so nothing is attempted,
+                // with the reason as its note.
+                processedItem["installed"] = true
+                processedItem["loop_suppressed"] = true
+                processedItem["note"] = loop.reason
+                appendToProcessedManagedInstalls(processedItem)
                 return true
             }
             if loop.reason.hasPrefix("Auto-cleared") {
