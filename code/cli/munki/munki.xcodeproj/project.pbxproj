@@ -467,6 +467,7 @@
 		C0AD963F2F3E58D80029A293 /* urlsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0AD96282F3E58D80029A293 /* urlsTests.swift */; };
 		C0AD96402F3E58D80029A293 /* versionutilsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0AD96292F3E58D80029A293 /* versionutilsTests.swift */; };
 		3EE5B6FF342B4FE8ADC324EF /* sessionlogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E774BC3E82224833A7002B48 /* sessionlogTests.swift */; };
+		C2EDF88659986BC74D973EA2 /* yamlutilsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C613EE1BFBAE1D0FE24736BC /* yamlutilsTests.swift */; };
 		A8F127ED094052C8F82A7EE6 /* loopguardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78399029E185D9535C489CC6 /* loopguardTests.swift */; };
 		9F7712948F17486CAABD6A91 /* yamlutils.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC921FEB5E2FB42F654C578E /* yamlutils.swift */; };
 		C0AD96412F3E58D80029A293 /* xattrTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0AD962A2F3E58D80029A293 /* xattrTests.swift */; };
@@ -938,6 +939,7 @@
 		C0AD96282F3E58D80029A293 /* urlsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = urlsTests.swift; sourceTree = "<group>"; };
 		C0AD96292F3E58D80029A293 /* versionutilsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = versionutilsTests.swift; sourceTree = "<group>"; };
 		E774BC3E82224833A7002B48 /* sessionlogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = sessionlogTests.swift; sourceTree = "<group>"; };
+		C613EE1BFBAE1D0FE24736BC /* yamlutilsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = yamlutilsTests.swift; sourceTree = "<group>"; };
 		78399029E185D9535C489CC6 /* loopguardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = loopguardTests.swift; sourceTree = "<group>"; };
 		C0AD962A2F3E58D80029A293 /* xattrTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = xattrTests.swift; sourceTree = "<group>"; };
 		C0AD96422F3E58F90029A293 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
@@ -1521,6 +1523,7 @@
 				C0AD96282F3E58D80029A293 /* urlsTests.swift */,
 				C0AD96292F3E58D80029A293 /* versionutilsTests.swift */,
 				E774BC3E82224833A7002B48 /* sessionlogTests.swift */,
+				C613EE1BFBAE1D0FE24736BC /* yamlutilsTests.swift */,
 				78399029E185D9535C489CC6 /* loopguardTests.swift */,
 				C0AD962A2F3E58D80029A293 /* xattrTests.swift */,
 				C0AD96172F3E58D80029A293 /* fixtures */,
@@ -2385,6 +2388,7 @@
 				C0AD963F2F3E58D80029A293 /* urlsTests.swift in Sources */,
 				C0AD96402F3E58D80029A293 /* versionutilsTests.swift in Sources */,
 				3EE5B6FF342B4FE8ADC324EF /* sessionlogTests.swift in Sources */,
+				C2EDF88659986BC74D973EA2 /* yamlutilsTests.swift in Sources */,
 				A8F127ED094052C8F82A7EE6 /* loopguardTests.swift in Sources */,
 				9F7712948F17486CAABD6A91 /* yamlutils.swift in Sources */,
 				C0AD96412F3E58D80029A293 /* xattrTests.swift in Sources */,
