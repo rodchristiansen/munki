@@ -167,7 +167,11 @@ func makeCatalogDB(_ repo: Repo) async throws -> CatalogDatabase {
     let allCatalog: Data
     let catalogItems: [PlistDict]
     do {
-        allCatalog = try await repo.get("catalogs/all")
+        do {
+            allCatalog = try await repo.get("catalogs/all.yaml")
+        } catch {
+            allCatalog = try await repo.get("catalogs/all")
+        }
     } catch let error as MunkiError {
         throw CatalogError.readError(
             description: "Could not read 'all' catalog: \(error.description)")

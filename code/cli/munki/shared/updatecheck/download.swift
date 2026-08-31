@@ -342,20 +342,51 @@ func downloadClientResources() {
     }
 }
 
-/// Attempt to download a catalog from the Munki server. Returns the path to the downloaded catalog file.
+/// Names to try for a catalog on the server, in order: the YAML file the
+/// repo publishes, then the bare name and the plist name older repos use.
+private let catalogExtensions = [".yaml", "", ".plist"]
+
+/// Attempt to download a catalog from the Munki server. Tries <name>.yaml
+/// first and falls back to <name> and <name>.plist on HTTP 404. The local
+/// copy is always stored under the bare catalog name.
+/// Returns the path to the downloaded catalog file.
 func downloadCatalog(_ catalogName: String) -> String? {
     let catalogPath = managedInstallsDir(subpath: "catalogs/\(catalogName)")
     display.detail("Getting catalog \(catalogName)...")
     let message = "Retrieving catalog \(catalogName)..."
-    do {
-        _ = try fetchMunkiResource(
-            kind: .catalog,
-            name: catalogName,
-            destinationPath: catalogPath,
-            message: message
-        )
-        return catalogPath
-    } catch {
+    let nameHasExtension = [".yaml", ".plist", ".xml"].contains(where: { catalogName.hasSuffix($0) })
+    let extensionsToTry = nameHasExtension ? [""] : catalogExtensions
+    var lastHttpError: (Int, String)?
+    var lastError: Error?
+    for ext in extensionsToTry {
+        let resourceName = catalogName + ext
+        do {
+            _ = try fetchMunkiResource(
+                kind: .catalog,
+                name: resourceName,
+                destinationPath: catalogPath,
+                message: message
+            )
+            display.detail("Retrieved catalog \(resourceName)")
+            return catalogPath
+        } catch let FetchError.http(errorCode, description) {
+            if errorCode == 404 {
+                lastHttpError = (errorCode, description)
+                continue
+            }
+            display.error("Could not retrieve catalog \(resourceName) from server. HTTP error \(errorCode): \(description)")
+            return nil
+        } catch let FetchError.connection(errorCode, description) {
+            display.error("Could not retrieve catalog \(resourceName) from server: connection error \(errorCode): \(description)")
+            return nil
+        } catch {
+            lastError = error
+            continue
+        }
+    }
+    if let (errorCode, description) = lastHttpError {
+        display.error("Could not retrieve catalog \(catalogName) from server. HTTP error \(errorCode): \(description)")
+    } else if let error = lastError {
         display.error("Could not retrieve catalog \(catalogName) from server: \(error.localizedDescription)")
     }
     return nil
