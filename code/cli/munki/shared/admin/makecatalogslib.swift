@@ -29,12 +29,24 @@ struct MakeCatalogOptions {
     var force: Bool = false
     var verbose: Bool = false
     var yamlOutput: Bool = false
+    /// With yamlOutput, also write each catalog under its bare name for
+    /// clients that do not ask for <name>.yaml yet. Transitional.
+    var legacyNames: Bool = false
     
-    init(skipPkgCheck: Bool = false, force: Bool = false, verbose: Bool = false, yamlOutput: Bool = false) {
+    init(skipPkgCheck: Bool = false, force: Bool = false, verbose: Bool = false, yamlOutput: Bool = false, legacyNames: Bool = false) {
         self.skipPkgCheck = skipPkgCheck
         self.force = force
         self.verbose = verbose
         self.yamlOutput = yamlOutput
+        self.legacyNames = legacyNames
+    }
+
+    /// The repo identifiers a catalog is written to under these options.
+    func catalogIdentifiers(for name: String) -> [String] {
+        if yamlOutput {
+            return legacyNames ? ["catalogs/" + name + ".yaml", "catalogs/" + name] : ["catalogs/" + name + ".yaml"]
+        }
+        return ["catalogs/" + name]
     }
 }
 
@@ -268,10 +280,10 @@ struct CatalogsMaker {
     mutating func cleanupCatalogs() async {
         do {
             let catalogList = try await repo.list("catalogs")
+            let keep = Set(catalogs.keys.flatMap { options.catalogIdentifiers(for: $0) })
             for catalogName in catalogList {
-                let bareName = catalogName.hasSuffix(".yaml") ? String(catalogName.dropLast(5)) : catalogName
-                if !(catalogs.keys.contains(bareName)) {
-                    let catalogIdentifier = "catalogs/" + catalogName
+                let catalogIdentifier = "catalogs/" + catalogName
+                if !keep.contains(catalogIdentifier) {
                     do {
                         try await repo.delete(catalogIdentifier)
                     } catch {
@@ -296,12 +308,12 @@ struct CatalogsMaker {
 
         // write the new catalogs
         // With --yaml each catalog is written as <name>.yaml, which is what
-        // clients ask for first, plus a YAML copy under the bare name so older
-        // clients that only request the bare name keep working. Without it a
+        // clients ask for first; --legacy-names adds a YAML copy under the bare
+        // name for clients that do not ask for <name>.yaml yet. Without --yaml a
         // catalog is a plist under the bare name.
         for key in catalogs.keys {
             if !(catalogs[key]?.isEmpty ?? true) {
-                let identifiers = options.yamlOutput ? ["catalogs/" + key + ".yaml", "catalogs/" + key] : ["catalogs/" + key]
+                let identifiers = options.catalogIdentifiers(for: key)
                 do {
                     if let value = catalogs[key] {
                         let data = options.yamlOutput ? try yamlToData(value) : try plistToData(value)

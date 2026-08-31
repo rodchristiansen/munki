@@ -44,6 +44,10 @@ struct MakeCatalogs: AsyncParsableCommand {
     @Flag(help: "Write catalogs in YAML format instead of XML plist.")
     var yaml = false
 
+    @Flag(name: .customLong("legacy-names"),
+          help: "With --yaml, also write each catalog under its bare name for clients that do not ask for <name>.yaml yet.")
+    var legacyNames = false
+
     @Option(name: [.customLong("repo-url"), .customLong("repo_url")],
             help: "Optional repo URL that takes precedence over the default repo_url specified via preferences.")
     var repoURL = ""
@@ -103,7 +107,8 @@ struct MakeCatalogs: AsyncParsableCommand {
             skipPkgCheck: skipPkgCheck,
             force: force,
             verbose: !silent,
-            yamlOutput: shouldUseYaml
+            yamlOutput: shouldUseYaml,
+            legacyNames: legacyNames
         )
 
         do {
