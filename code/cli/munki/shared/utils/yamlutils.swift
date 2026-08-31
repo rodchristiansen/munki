@@ -174,8 +174,28 @@ private func scalarStyleForString(key: String, value: String) -> Node.Scalar.Sty
         return .folded
     }
     
+    // A string a YAML reader would take for a number, boolean or null must be
+    // quoted, or it does not survive the round trip: '6.10' would come back
+    // as 6.1 and '1.0' as 1. Versions are the usual victims.
+    if looksLikeYamlNonString(value) {
+        return .singleQuoted
+    }
+
     // Single-line strings use default style
     return .any
+}
+
+/// Plain scalars the YAML 1.1 and 1.2 core schemas resolve to something other
+/// than a string: integers (decimal, hex, octal, with underscores), floats
+/// (including .inf and .nan), booleans and null, plus a leading/trailing
+/// space that plain style would trim.
+private let yamlNonStringScalar = try! NSRegularExpression(pattern: #"^(?:[-+]?(?:0|[1-9][0-9_]*)|0x[0-9a-fA-F_]+|0o?[0-7_]+|0b[01_]+|[-+]?(?:\.[0-9_]+|[0-9][0-9_]*(?:\.[0-9_]*)?)(?:[eE][-+]?[0-9]+)?|[-+]?\.(?:inf|Inf|INF)|\.(?:nan|NaN|NAN)|[0-9]+(?::[0-5]?[0-9])+(?:\.[0-9_]*)?|true|True|TRUE|false|False|FALSE|yes|Yes|YES|no|No|NO|on|On|ON|off|Off|OFF|y|Y|n|N|null|Null|NULL|~)$"#)
+
+func looksLikeYamlNonString(_ value: String) -> Bool {
+    if value.isEmpty { return true }
+    if value.hasPrefix(" ") || value.hasSuffix(" ") { return true }
+    let range = NSRange(value.startIndex..., in: value)
+    return yamlNonStringScalar.firstMatch(in: value, range: range) != nil
 }
 
 /// Check if a dictionary looks like a receipt entry
