@@ -44,7 +44,11 @@ func guessRepoURL() -> String {
         for url in possibleURLs {
             do {
                 display.info("Checking for Munki repo at \(url)")
-                _ = try getDataFromURL(url + "/catalogs/all")
+                do {
+                    _ = try getDataFromURL(url + "/catalogs/all.yaml")
+                } catch {
+                    _ = try getDataFromURL(url + "/catalogs/all")
+                }
                 // success: just return this url
                 return url
             } catch {

@@ -269,7 +269,8 @@ struct CatalogsMaker {
         do {
             let catalogList = try await repo.list("catalogs")
             for catalogName in catalogList {
-                if !(catalogs.keys.contains(catalogName)) {
+                let bareName = catalogName.hasSuffix(".yaml") ? String(catalogName.dropLast(5)) : catalogName
+                if !(catalogs.keys.contains(bareName)) {
                     let catalogIdentifier = "catalogs/" + catalogName
                     do {
                         try await repo.delete(catalogIdentifier)
@@ -294,16 +295,21 @@ struct CatalogsMaker {
         await cleanupCatalogs()
 
         // write the new catalogs
-        // Catalogs are always written extensionless
+        // With --yaml each catalog is written as <name>.yaml, which is what
+        // clients ask for first, plus a YAML copy under the bare name so older
+        // clients that only request the bare name keep working. Without it a
+        // catalog is a plist under the bare name.
         for key in catalogs.keys {
             if !(catalogs[key]?.isEmpty ?? true) {
-                let catalogIdentifier = "catalogs/" + key
+                let identifiers = options.yamlOutput ? ["catalogs/" + key + ".yaml", "catalogs/" + key] : ["catalogs/" + key]
                 do {
                     if let value = catalogs[key] {
                         let data = options.yamlOutput ? try yamlToData(value) : try plistToData(value)
-                        try await repo.put(catalogIdentifier, content: data)
-                        if options.verbose {
-                            print("Created \(catalogIdentifier)...")
+                        for catalogIdentifier in identifiers {
+                            try await repo.put(catalogIdentifier, content: data)
+                            if options.verbose {
+                                print("Created \(catalogIdentifier)...")
+                            }
                         }
                     }
                 } catch let PlistError.writeError(description) {
