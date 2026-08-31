@@ -75,9 +75,13 @@ The Xcode project compiles `sessionlog.swift` into the same six targets as `repo
 
 `items.json` records: `id`, `item_name`, `display_name`, `item_type`, `current_status` (`Installed`, `Pending`, `Removed`, `Warning`, `Error`), `latest_version`, `installed_version`, `last_seen_in_session`, `last_attempt_time`, `last_attempt_status`, `last_update`, `failure_count`, `warning_count`, `type` (`munki`), `last_error`, `last_warning`, `action_performed`.
 
-## Not included
+## Install-loop guard
 
-LoopGuard (install-loop detection and suppression, `state.json`, `loop_suppressed.json`) is a separate feature. The schema leaves room for it: `status_reason_code: loop_suppressed` and `action_performed: loop_suppressed` are reserved.
+`loopguard.swift` pauses a package that keeps wanting to install right after it installed, records why (`reports/state.json`), and lists what it is holding (`reports/loop_suppressed.json`, the `LoopSuppressed` array on ManagedInstallReport.plist, `managedsoftwareupdate --loop-status`). It reads nothing from the session log; the session log reads from it, so the guard also works on a build without `sessionlog.swift`.
+
+Where the two meet: the guard rebuilds its history from `logs/*/*/events.jsonl` when that exists and from `Archives/` otherwise; its session id is the same `yyyy-MM-dd-HHmm` the session log uses; `buildItems` folds the guard's report into `items.json` as `current_status: Warning`, `action_performed: loop_suppressed`, `status_reason_code: loop_suppressed`, `install_loop_detected: true`, `last_warning` (two lines joined) and `warning_messages` (the two lines apart); a restart-finalised item shows `Pending` / `restart_deferred` / `pending_reboot`. `status_check` events carry the check's `status_reason_code` and `detection_method` from `installStatus`, and a paused item logs a `suppressed` status check.
+
+Hooks outside the guard's own file: `installationstate.swift` (`installStatus`, the reasoned form of `installedState`), `analyze.swift` (the veto in `processInstall`, and `loop_trigger` / `loop_check` / `loop_catalog_fingerprint` on the InstallInfo item), `installer.swift` (`noteInstall` after each install result), `managedsoftwareupdate.swift` (`--loop-status`, `--clear-loop`, session id, report write), `prefs.swift` (`LoopGuardEnabled`, `LoopMaxTime`, `LoopReprobeHours`).
 
 ## Merging upstream
 
