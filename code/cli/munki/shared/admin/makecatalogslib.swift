@@ -28,25 +28,26 @@ struct MakeCatalogOptions {
     var skipPkgCheck: Bool = false
     var force: Bool = false
     var verbose: Bool = false
+    /// Write each catalog as YAML to catalogs/<name>.yaml.
     var yamlOutput: Bool = false
-    /// With yamlOutput, also write each catalog under its bare name for
-    /// clients that do not ask for <name>.yaml yet. Transitional.
-    var legacyNames: Bool = false
+    /// Write each catalog as an XML plist to catalogs/<name>, the classic
+    /// Munki layout; the default when yamlOutput is off.
+    var xmlOutput: Bool = true
     
-    init(skipPkgCheck: Bool = false, force: Bool = false, verbose: Bool = false, yamlOutput: Bool = false, legacyNames: Bool = false) {
+    init(skipPkgCheck: Bool = false, force: Bool = false, verbose: Bool = false, yamlOutput: Bool = false, xmlOutput: Bool? = nil) {
         self.skipPkgCheck = skipPkgCheck
         self.force = force
         self.verbose = verbose
         self.yamlOutput = yamlOutput
-        self.legacyNames = legacyNames
+        self.xmlOutput = xmlOutput ?? !yamlOutput
     }
 
     /// The repo identifiers a catalog is written to under these options.
     func catalogIdentifiers(for name: String) -> [String] {
-        if yamlOutput {
-            return legacyNames ? ["catalogs/" + name + ".yaml", "catalogs/" + name] : ["catalogs/" + name + ".yaml"]
-        }
-        return ["catalogs/" + name]
+        var ids = [String]()
+        if yamlOutput { ids.append("catalogs/" + name + ".yaml") }
+        if xmlOutput { ids.append("catalogs/" + name) }
+        return ids
     }
 }
 
@@ -307,17 +308,16 @@ struct CatalogsMaker {
         await cleanupCatalogs()
 
         // write the new catalogs
-        // With --yaml each catalog is written as <name>.yaml, which is what
-        // clients ask for first; --legacy-names adds a YAML copy under the bare
-        // name for clients that do not ask for <name>.yaml yet. Without --yaml a
-        // catalog is a plist under the bare name.
+        // --yaml writes each catalog as YAML to <name>.yaml, which is what
+        // clients ask for first; --xml writes the classic XML plist under the
+        // bare name, for clients that only ask for that. Both may be given.
         for key in catalogs.keys {
             if !(catalogs[key]?.isEmpty ?? true) {
                 let identifiers = options.catalogIdentifiers(for: key)
                 do {
                     if let value = catalogs[key] {
-                        let data = options.yamlOutput ? try yamlToData(value) : try plistToData(value)
                         for catalogIdentifier in identifiers {
+                            let data = catalogIdentifier.hasSuffix(".yaml") ? try yamlToData(value) : try plistToData(value)
                             try await repo.put(catalogIdentifier, content: data)
                             if options.verbose {
                                 print("Created \(catalogIdentifier)...")
