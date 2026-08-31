@@ -857,7 +857,7 @@ extension LoopGuard {
         let reprobeHours = intPref("LoopReprobeHours") ?? 24
         let hours = min(reprobeHours > 0 ? reprobeHours : 24, maxSuppressionDays * 24)
         let display = DisplayAndLog.main
-        display.warning("Looping install detected: \(name) v\(version) — \(LoopGuard.nonConvergenceReason); paused for \(hours)h")
+        display.warning("Looping install detected: \(name) v\(version) — \(LoopGuard.nonConvergenceReason); paused for \(LoopGuard.formatDuration(TimeInterval(hours * 3600)))")
         display.warning("Needs install because \(status.trigger?.describe() ?? "an unnamed check")")
         markNonConverged(name: name, version: version, catalogFingerprint: fingerprint, reprobeHours: reprobeHours, trigger: status.trigger)
     }
