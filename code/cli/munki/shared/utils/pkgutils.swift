@@ -743,6 +743,13 @@ class Receipts {
         }
         return receipts
     }
+
+    /// Forget the cached receipts so the next get() re-reads them. Needed
+    /// whenever this process has just installed or removed a package and
+    /// wants to evaluate installation state again in the same run.
+    func invalidate() {
+        receipts = [String: String]()
+    }
 }
 
 /// Uses the singleton Receipts since getting the info is expensive
