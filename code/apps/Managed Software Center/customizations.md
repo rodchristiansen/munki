@@ -28,7 +28,7 @@ We maintain custom branding assets to display our organization's identity in the
 **Specifications:**
 - Format: JPEG
 - Dimensions: (check your actual dimensions)
-- Usage: Displayed at top of Software Center web interface
+- Usage: Displayed at top of Managed Software Center web interface
 
 **To Update:**
 1. Create new image matching dimensions
@@ -64,9 +64,8 @@ AppIcon.icon/
 
 **Location:** `Managed Software Center/*.lproj/InfoPlist.strings`
 
-Customized display names for different localizations:
-- `CFBundleDisplayName` - Name shown in Finder/Dock
-- `CFBundleName` - Application name
+These now match upstream - the "Software Center" display-name rename was
+reverted, so `CFBundleDisplayName`/`CFBundleName` are upstream's values.
 
 ---
 

@@ -9,8 +9,9 @@
 
 ## Overview
 
-We maintain customized launchd plists that differ from upstream primarily in:
-- Application paths (we use "Software Center" naming)
+The launchd plists now match upstream (the "Software Center" app rename was
+reverted; the app is "Managed Software Center" as upstream ships it). Historical
+customizations that upstream has since adopted:
 - AssociatedBundleIdentifiers for macOS notification handling
 - Tool paths (`/usr/local/munki/libexec/` structure)
 
@@ -22,8 +23,8 @@ We maintain customized launchd plists that differ from upstream primarily in:
 
 | File | Purpose | Key Customizations |
 |------|---------|-------------------|
-| `com.googlecode.munki.ManagedSoftwareCenter.plist` | Triggers Software Center launch | Path to `Software Center.app`, libexec paths |
-| `com.googlecode.munki.MunkiStatus.plist` | Status display during installs | Path to MunkiStatus within Software Center.app |
+| `com.googlecode.munki.ManagedSoftwareCenter.plist` | Triggers Managed Software Center launch | Matches upstream |
+| `com.googlecode.munki.MunkiStatus.plist` | Status display during installs | Matches upstream |
 | `com.googlecode.munki.munki-notifier.plist` | User notifications | AssociatedBundleIdentifiers |
 | `com.googlecode.munki.managedsoftwareupdate-loginwindow.plist` | Login window installs | Supervisor removal, direct msu invocation |
 
@@ -43,12 +44,8 @@ We maintain customized launchd plists that differ from upstream primarily in:
 
 ### 1. Application Naming
 
-```diff
-- /Applications/Managed Software Center.app
-+ /Applications/Software Center.app
-```
-
-We use "Software Center" as the user-facing application name.
+None. The "Software Center" rename has been reverted; the app is
+`/Applications/Managed Software Center.app`, matching upstream.
 
 ### 2. Tool Paths
 
@@ -61,12 +58,8 @@ Internal tools moved to `libexec/` subdirectory per Munki 7 structure.
 
 ### 3. PathState Triggers
 
-```diff
-- /var/run/com.googlecode.munki.ManagedSoftwareCenter
-+ /var/run/com.googlecode.munki.SoftwareCenter
-```
-
-Updated to match our application naming.
+None. The PathState trigger is `/var/run/com.googlecode.munki.ManagedSoftwareCenter`,
+matching upstream.
 
 ### 4. AssociatedBundleIdentifiers
 
@@ -95,22 +88,12 @@ Munki 7 removed the supervisor wrapper:
 
 ## Merge Strategy
 
-**Priority:** Always keep OUR versions during upstream merges.
-
-```bash
-# During merge conflicts
-git checkout --ours launchd/
-git add launchd/
-```
+The launchd plists match upstream, so upstream merges apply cleanly - no
+keep-OURS handling is needed for `launchd/`.
 
 **Verification after merge:**
 ```bash
-# Check our paths are preserved
-grep -r "Software Center" launchd/
-# Should show multiple matches
-
-# Verify libexec paths
-grep -r "libexec" launchd/
+git diff upstream/main -- launchd/
 ```
 
 ---
@@ -132,7 +115,7 @@ grep -r "libexec" launchd/
     <dict>
         <key>PathState</key>
         <dict>
-            <key>/var/run/com.googlecode.munki.SoftwareCenter</key>
+            <key>/var/run/com.googlecode.munki.ManagedSoftwareCenter</key>
             <true/>
         </dict>
     </dict>
@@ -146,7 +129,7 @@ grep -r "libexec" launchd/
     <array>
         <string>/usr/local/munki/libexec/launchapp</string>
         <string>-a</string>
-        <string>/Applications/Software Center.app</string>
+        <string>/Applications/Managed Software Center.app</string>
     </array>
 </dict>
 </plist>

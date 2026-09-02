@@ -15,15 +15,8 @@ code/apps/Managed[[:space:]]Software[[:space:]]Center/Managed[[:space:]]Software
 code/apps/Managed[[:space:]]Software[[:space:]]Center/Managed[[:space:]]Software[[:space:]]Center/Resources/WebResources/branding1.jpg merge=ours
 code/apps/Managed[[:space:]]Software[[:space:]]Center/Managed[[:space:]]Software[[:space:]]Center/Resources/WebResources/branding2.jpg merge=ours
 
-# Localized strings - all locales (our "Software Center" naming)
-code/apps/Managed[[:space:]]Software[[:space:]]Center/Managed[[:space:]]Software[[:space:]]Center/**/InfoPlist.strings merge=ours
-
-# Xcode project - contains our build settings
-code/apps/Managed[[:space:]]Software[[:space:]]Center/Managed[[:space:]]Software[[:space:]]Center.xcodeproj/project.pbxproj merge=ours
-
-# Launchd plists - our custom paths and settings
-launchd/LaunchAgents/*.plist merge=ours
-launchd/LaunchDaemons/*.plist merge=ours
+# InfoPlist.strings, project.pbxproj, and launchd plists now match upstream
+# (the "Software Center" app rename was reverted) - no merge=ours pins needed
 
 # Fork documentation - we maintain these
 .github/copilot-instructions.md merge=ours

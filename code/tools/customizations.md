@@ -59,9 +59,10 @@ Opens Terminal and runs the build script for users who prefer GUI interaction.
 **Purpose:** Creates the Munki meta-package installer.
 
 **Our Customizations:**
-- Path references to our renamed application ("Software Center")
 - Version numbering integration
 - Custom component packages
+
+(App path references match upstream - the "Software Center" rename was reverted.)
 
 ### 4. `code/tools/make_swift_munki_pkg.sh`
 

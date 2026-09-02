@@ -78,16 +78,16 @@ unrecognised keeps warning.
 - `Resources/WebResources/branding1.jpg` - Alternate branding
 - `Resources/WebResources/branding2.jpg` - Alternate branding
 - `AppIcon.icon/` - Custom application icons
-- `*/InfoPlist.strings` - Localized display names (all locales)
-- `Managed Software Center.xcodeproj/project.pbxproj` - Xcode project configuration
+
+(`*/InfoPlist.strings` and `Managed Software Center.xcodeproj/project.pbxproj`
+now match upstream - the "Software Center" rename was reverted.)
 
 ### 4. Launchd Configuration
 **Location:** `launchd/`  
 **Documentation:** [`launchd/customizations.md`](launchd/customizations.md)
 
-**Modified plists:**
-- LaunchAgents for ManagedSoftwareCenter, MunkiStatus, munki-notifier
-- LaunchDaemons for authrestartd, logouthelper, managedsoftwareupdate-*
+**Modified plists:** none - the launchd plists now match upstream (the
+"Software Center" rename was reverted).
 
 ### 5. Build System
 **Location:** Root + `code/tools/`  
@@ -162,11 +162,11 @@ git add code/munkiadmin code/cli/munki/munkipkg
 |-----------|------------|
 | `branding*.jpg` | Keep OURS |
 | `AppIcon.icon/*` | Keep OURS |
-| `*/InfoPlist.strings` | Keep OURS |
-| `Managed Software Center.xcodeproj/project.pbxproj` | Keep OURS |
+| `*/InfoPlist.strings` | Accept THEIRS (matches upstream - rename reverted) |
+| `Managed Software Center.xcodeproj/project.pbxproj` | Accept THEIRS (matches upstream - rename reverted) |
 | `Info.plist` (version) | Keep OURS |
 | `version.swift` | Keep OURS |
-| `launchd/*.plist` | Keep OURS |
+| `launchd/*.plist` | Accept THEIRS (matches upstream - rename reverted) |
 | `munkiimport.swift` | Accept THEIRS (our customizations are now upstream!) |
 | `code/cli/*` | Accept THEIRS |
 | `code/tools/*` | Accept THEIRS |
@@ -205,10 +205,6 @@ code/cli/munki/shared/sessionlog-customizations.md
 code/cli/munki/munkiCLItesting/sessionlogTests.swift
 code/apps/Managed Software Center/Resources/WebResources/branding*.jpg
 code/apps/Managed Software Center/AppIcon.icon/
-code/apps/Managed Software Center/*/InfoPlist.strings
-code/apps/Managed Software Center/Managed Software Center.xcodeproj/project.pbxproj
-launchd/LaunchAgents/*.plist
-launchd/LaunchDaemons/*.plist
 build.sh
 build.command
 CUSTOMIZATIONS.md

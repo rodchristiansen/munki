@@ -1,5 +1,5 @@
 /* InfoPlist.strings */
 
-"CFBundleName" = "Software Center";
-"CFBundleDisplayName" = "Software Center";
-NSHumanReadableCopyright = "Copyright © 2010-2025 The Munki Project\nhttps://github.com/munki/munki";
+"CFBundleName" = "Managed Software Center";
+"CFBundleDisplayName" = "Managed Software Center";
+NSHumanReadableCopyright = "Copyright © 2010-2026 The Munki Project\nhttps://github.com/munki/munki";

@@ -244,15 +244,12 @@ This document tracks the differences between our internal fork (`example-org/mun
 We maintain custom branding assets for Managed Software Center.
 *   **Files**:
     *   `code/apps/Managed Software Center/AppIcon.icon/` (Custom icons)
-    *   `code/apps/Managed Software Center/*/InfoPlist.strings` (Localized strings - ALL locales)
-    *   `code/apps/Managed Software Center/Managed Software Center.xcodeproj/project.pbxproj` (Xcode project)
+*   **Note**: `*/InfoPlist.strings` and `project.pbxproj` now match upstream -
+    the "Software Center" app rename was reverted.
 
 ### 2. Launchd Configuration
-We have customized launchd property lists for our environment.
-*   **Files**:
-    *   `launchd/LaunchAgents/com.googlecode.munki.ManagedSoftwareCenter.plist`
-    *   `launchd/LaunchAgents/com.googlecode.munki.MunkiStatus.plist`
-    *   `launchd/LaunchAgents/com.googlecode.munki.munki-notifier.plist`
+The launchd property lists now match upstream (the "Software Center" rename
+was reverted) - no special handling needed.
 
 ### 3. Build System Customizations
 We use custom build scripts for our internal deployment.
@@ -327,9 +324,8 @@ To fetch updates from upstream and merge them into our internal fork:
     ```
 
 7.  **Resolve File Conflicts**:
-    *   **Branding/Launchd**: Always keep **OUR** versions (HEAD).
-    *   **InfoPlist.strings**: Keep **OUR** versions for ALL locales.
-    *   **project.pbxproj**: Keep **OUR** version.
+    *   **Branding images/icons**: Always keep **OUR** versions (HEAD).
+    *   **InfoPlist.strings / project.pbxproj / launchd plists**: Accept **THEIR** versions (these match upstream - the "Software Center" rename was reverted).
     *   **Version Files**: Always keep **OUR** versions (HEAD) for `Info.plist` files and `version.swift`.
     *   **Documentation**: Keep **OUR** versions of `CUSTOMIZATIONS.md` and `.github/copilot-instructions.md`.
     *   **Code (`code/cli/*`)**: Generally accept **THEIR** versions. Our `munkiimport.swift` customizations are now upstream!
