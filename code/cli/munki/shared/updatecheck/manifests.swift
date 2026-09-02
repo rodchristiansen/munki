@@ -29,6 +29,16 @@ enum ManifestError: Error {
     case http(errorCode: Int, description: String)
 }
 
+extension ManifestError {
+    /// True when the manifest could not be fetched because of a transient
+    /// network condition (offline, timed out, connection lost). Nothing is wrong
+    /// with the manifest or the machine; the next run simply tries again.
+    var isTransientNetworkFailure: Bool {
+        guard case let .connection(errorCode, _) = self else { return false }
+        return FetchError.transientNetworkErrorCodes.contains(errorCode)
+    }
+}
+
 extension ManifestError: LocalizedError {
     var errorDescription: String? {
         switch self {
@@ -268,10 +278,20 @@ func getPrimaryManifest(alternateIdentifier: String? = nil) throws -> String {
         } catch {
             // Non-404 error (connection, auth, 5xx): log which identifier failed
             // (getManifest suppressed its own output under suppressErrors) and
-            // surface it instead of masking a transient/server problem behind the
-            // fallback chain.
-            display.error(
-                "Could not retrieve manifest \(identifier) from the server: \(error.localizedDescription)")
+            // surface it instead of masking a server problem behind the fallback
+            // chain. Offline, timed out or connection lost is not a problem with
+            // the manifest or the machine, so it is logged, not reported as an
+            // error; the caller says the check is deferred.
+            if let manifestError = error as? ManifestError,
+               manifestError.isTransientNetworkFailure,
+               boolPref("SuppressTransientDownloadWarnings") ?? true
+            {
+                display.info(
+                    "Could not reach the Munki server for manifest \(identifier): \(error.localizedDescription)")
+            } else {
+                display.error(
+                    "Could not retrieve manifest \(identifier) from the server: \(error.localizedDescription)")
+            }
             throw error
         }
         if !manifest.isEmpty {

@@ -377,7 +377,14 @@ func downloadCatalog(_ catalogName: String) -> String? {
             display.error("Could not retrieve catalog \(resourceName) from server. HTTP error \(errorCode): \(description)")
             return nil
         } catch let FetchError.connection(errorCode, description) {
-            display.error("Could not retrieve catalog \(resourceName) from server: connection error \(errorCode): \(description)")
+            // Same treatment as transient item downloads: offline is not an error.
+            if FetchError.transientNetworkErrorCodes.contains(errorCode),
+               boolPref("SuppressTransientDownloadWarnings") ?? true
+            {
+                display.info("Could not reach the Munki server for catalog \(resourceName): transient network error \(errorCode): \(description). Will retry on the next run.")
+            } else {
+                display.error("Could not retrieve catalog \(resourceName) from server: connection error \(errorCode): \(description)")
+            }
             return nil
         } catch {
             lastError = error
