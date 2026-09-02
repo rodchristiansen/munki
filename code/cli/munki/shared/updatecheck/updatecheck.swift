@@ -264,7 +264,18 @@ func checkForUpdates(clientID: String? = nil, localManifestPath: String? = nil) 
         do {
             mainManifestPath = try getPrimaryManifest(alternateIdentifier: clientID)
         } catch let err {
-            display.error("Could not retrieve managed install primary manifest: \(err.localizedDescription)")
+            // Offline, timed out or the connection dropped: the machine is not
+            // broken and neither is the repo, so this is a deferred check rather
+            // than an error -- routine on laptops that sleep and roam. Real
+            // failures (HTTP errors, invalid manifests, TLS) still report as errors.
+            if let manifestError = err as? ManifestError,
+               manifestError.isTransientNetworkFailure,
+               boolPref("SuppressTransientDownloadWarnings") ?? true
+            {
+                display.info("Could not reach the Munki server for the primary manifest: \(err.localizedDescription). Will retry on the next run.")
+            } else {
+                display.error("Could not retrieve managed install primary manifest: \(err.localizedDescription)")
+            }
             return .finishedWithErrors
         }
     }
