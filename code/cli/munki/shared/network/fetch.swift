@@ -320,7 +320,12 @@ func getURL(
             errorDescription = urlError.localizedDescription
             display.detail("Download error \(errorCode): \(errorDescription)")
         } else {
-            errorDescription = error.localizedDescription
+            // Not a URLError: name the domain and code, otherwise a POSIX
+            // "File exists" from the session layer is indistinguishable from
+            // a network fault in the report.
+            let nsError = error as NSError
+            errorCode = nsError.code
+            errorDescription = "\(nsError.domain) \(nsError.code): \(error.localizedDescription)"
             display.detail("Download error: \(errorDescription)")
         }
         if session.SSLerror != 0 {
