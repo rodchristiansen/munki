@@ -517,6 +517,12 @@ func processInstall(
         // same or higher version installed
         processedItem["installed"] = true
 
+        // An item the loop guard paused that now reads installed has converged;
+        // drop the pause so it stops being reported for the rest of its window.
+        if LoopGuard.shared.noteConverged(name: name) {
+            display.info("Loop suppression for \(name) cleared: \(name) now reads as installed")
+        }
+
         if !dependenciesMet {
             display.warning("Could not resolve all dependencies for \(manifestItemName), but no install or update needed.")
         }

@@ -381,6 +381,22 @@ final class LoopGuard {
         saveState()
     }
 
+    /// Drops an active suppression (or pending-restart hold) for an item that
+    /// now reads as installed. A pause exists to stop an item that keeps asking
+    /// to install; once it stops asking, the pause has done its job and keeping
+    /// it -- and reporting it for the rest of the window -- only says a problem
+    /// exists where none does. Returns true when something was cleared.
+    @discardableResult
+    func noteConverged(name: String) -> Bool {
+        lock.lock(); defer { lock.unlock() }
+        let key = name.lowercased()
+        guard var pkg = state.packages[key], isActive(pkg) || pkg.pendingRestartSince != nil else { return false }
+        resetLoopHistory(&pkg, version: pkg.lastVersion, fingerprint: nil)
+        state.packages[key] = pkg
+        saveState()
+        return true
+    }
+
     @discardableResult
     func clearLoop(name: String) -> Bool {
         lock.lock(); defer { lock.unlock() }
