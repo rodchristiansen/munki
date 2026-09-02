@@ -234,6 +234,12 @@ func processInstall(
     } else if let requires = pkginfo["requires"] as? String {
         dependencies = [requires]
     }
+    // Dependencies that could not be processed only because the loop guard is
+    // holding them. The dependent item may still be fine: if it is already
+    // installed there is nothing to do, and a warning every run for the length
+    // of the hold would only restate the dependency's own warning.
+    var pausedDependencies = [String]()
+    var unmetDependencies = 0
     for item in dependencies {
         display.detail("\(name)-\(version) requires \(item). Getting info on \(item)...")
         let success = await processInstall(
@@ -245,6 +251,11 @@ func processInstall(
         )
         if !success {
             dependenciesMet = false
+            unmetDependencies += 1
+            let (dependencyName, _) = nameAndVersion(item)
+            if LoopGuard.shared.suppressionCause(name: dependencyName) != nil {
+                pausedDependencies.append(dependencyName)
+            }
         }
     }
 
@@ -524,7 +535,11 @@ func processInstall(
         }
 
         if !dependenciesMet {
-            display.warning("Could not resolve all dependencies for \(manifestItemName), but no install or update needed.")
+            if pausedDependencies.count == unmetDependencies {
+                display.info("\(manifestItemName) is installed; its dependency \(pausedDependencies.joined(separator: ", ")) is paused by the loop guard, nothing to do.")
+            } else {
+                display.warning("Could not resolve all dependencies for \(manifestItemName), but no install or update needed.")
+            }
         }
 
         if let installerType = pkginfo["installer_type"] as? String,
