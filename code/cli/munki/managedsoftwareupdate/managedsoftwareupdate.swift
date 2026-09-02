@@ -656,7 +656,7 @@ struct ManagedSoftwareUpdate: AsyncParsableCommand {
 
         Report.shared.record(LoopGuard.shared.writeReports().map(\.plist), to: "LoopSuppressed")
         display.majorStatus("Finishing...")
-        await doFinishingTasks(runtype: runtype)
+        await doFinishingTasks()
         sendDockUpdateNotification()
         sendEndedNotification()
 
@@ -666,6 +666,9 @@ struct ManagedSoftwareUpdate: AsyncParsableCommand {
             summary: sessionSummary,
             report: Report.shared.report
         )
+        // postflight runs last so it sees this session's reports, not the
+        // previous run's, and still runs ahead of any restart or logout
+        await runPostflight(runtype: runtype)
         munkiLog("### Ending managedsoftwareupdate run ###")
         if !otherOptions.quiet {
             print("Done.")

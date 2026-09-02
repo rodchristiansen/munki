@@ -479,7 +479,7 @@ func startLogoutHelper() {
 }
 
 /// A collection of tasks to do as we finish up
-func doFinishingTasks(runtype: String = "") async {
+func doFinishingTasks() async {
     // finish our report
     Report.shared.record(Date(), to: "EndTime")
     Report.shared.record(getVersion(), to: "ManagedInstallVersion")
@@ -500,8 +500,13 @@ func doFinishingTasks(runtype: String = "") async {
 
     // save application inventory data
     saveAppData()
+}
 
-    // run the Munki postflight script if it exists
+/// Run the Munki postflight script if it exists. This must happen after the
+/// session reports have been written, since postflight is where they get
+/// handed off (ReportMate and friends read reports/items.json et al), and
+/// before any restart or logout that would kill the handover.
+func runPostflight(runtype: String = "") async {
     // if runtype is not defined -- we're being called by osinstall
     let postflightRuntype: String = if !runtype.isEmpty {
         runtype
