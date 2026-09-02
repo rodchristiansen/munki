@@ -847,6 +847,10 @@ extension LoopGuard {
         recordAttempt(name: name, version: version, success: success, catalogFingerprint: fingerprint, trigger: trigger)
         guard success, !(item["OnDemand"] as? Bool ?? false), let check = item["loop_check"] as? PlistDict else { return }
 
+        // The receipts cache was filled before this install ran; evaluating
+        // against it reports the old receipt version and flags every
+        // receipts-based package as looping the moment it installs.
+        Receipts.shared.invalidate()
         let status = await installStatus(check)
         guard status.needsAction else { return }
         let restartAction = item["RestartAction"] as? String ?? "None"
