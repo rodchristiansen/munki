@@ -93,7 +93,7 @@ func runMunkiDirScript(_ scriptPath: String, taskName: String, runType: String) 
     } catch ExternalScriptError.notFound {
         // not required, so pass
     } catch {
-        display.warning("Unexpected error when attempting to run \(scriptPath): \(error.localizedDescription)")
+        display.warning("Unexpected error when attempting to run \(scriptPath): \(error)")
     }
     return 0
 }

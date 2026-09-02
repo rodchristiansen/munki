@@ -313,9 +313,20 @@ func runCLI(_ tool: String,
     return results
 }
 
-enum ProcessError: Error {
+enum ProcessError: Error, LocalizedError {
     case error(description: String)
     case timeout
+
+    /// Without this, `localizedDescription` is the generic
+    /// "The operation couldn't be completed. (ProcessError error 1.)"
+    var errorDescription: String? {
+        switch self {
+        case let .error(description):
+            return description
+        case .timeout:
+            return "Process timed out"
+        }
+    }
 }
 
 /// like Python's subprocess.check_output

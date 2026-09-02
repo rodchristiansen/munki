@@ -36,7 +36,7 @@ enum SQL3Status {
 }
 
 /// General error class for errors
-struct SQL3Error: Error, CustomStringConvertible {
+struct SQL3Error: Error, CustomStringConvertible, LocalizedError {
     public internal(set) var message: String
 
     /// Creates a new error with the given message.
@@ -45,6 +45,12 @@ struct SQL3Error: Error, CustomStringConvertible {
     }
 
     public var description: String {
+        return message
+    }
+
+    /// Without this, `localizedDescription` is the generic
+    /// "The operation couldn't be completed. (SQL3Error error 1.)"
+    public var errorDescription: String? {
         return message
     }
 }
