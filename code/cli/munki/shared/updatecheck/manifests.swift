@@ -422,6 +422,16 @@ func processManifest(
         return
     }
 
+    // A catalog that failed to download leaves nothing to look items up in.
+    // Without this check, every item in the manifest is reported as missing
+    // from the catalog and the one line that matters -- the failed catalog
+    // download, already logged as an error -- is buried under one warning per
+    // item. A Mac that loses its connection mid-download produced 40 of them.
+    if !catalogList.contains(where: { Catalogs.shared.list().contains($0) }) {
+        display.warning("Skipping \(manifestName): none of its catalogs (\(catalogList.joined(separator: ", "))) are available this run.")
+        return
+    }
+
     // process all included manifests first
     for includedManifestName in manifestdata["included_manifests"] as? [String] ?? [] {
         if includedManifestName.isEmpty {
