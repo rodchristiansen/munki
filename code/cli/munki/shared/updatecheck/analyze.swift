@@ -375,14 +375,22 @@ func processInstall(
                         // item simply has not been downloaded yet and the next run will
                         // try again. Log it, but don't raise a warning for it unless the
                         // admin has asked to see them.
-                        if err.isTransientNetworkFailure,
-                           boolPref("SuppressTransientDownloadWarnings") ?? true
-                        {
+                        let suppressed = err.isTransientNetworkFailure
+                            && (boolPref("SuppressTransientDownloadWarnings") ?? true)
+                        if suppressed {
                             display.info("Download of \(manifestItemName) deferred: transient network error \(errorCode): \(description). Will retry on the next run.")
                         } else {
                             display.warning("Download of \(manifestItemName) failed: error \(errorCode): \(description)")
                         }
-                        processedItem["note"] = "Download failed: \(description)"
+                        // The note is what a reporting client reads back as the item's
+                        // problem text, so setting it here re-raises as a per-item warning
+                        // the very message the suppression preference just chose not to
+                        // print. A laptop that loses its link mid-download is not a problem
+                        // to act on: the item stays pending and the next run fetches it.
+                        // The numeric code below still records what happened.
+                        if !suppressed {
+                            processedItem["note"] = "Download failed: \(description)"
+                        }
                         // Record the numeric code so consumers of ManagedInstallReport can
                         // tell a transient network failure from a real one without having
                         // to pattern-match the localized description.
