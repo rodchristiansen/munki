@@ -377,6 +377,16 @@ func downloadCatalog(_ catalogName: String) -> String? {
             display.error("Could not retrieve catalog \(resourceName) from server. HTTP error \(errorCode): \(description)")
             return nil
         } catch let FetchError.connection(errorCode, description) {
+            // The server was unreachable. A catalog we fetched on an earlier run is
+            // still on disk and is a far better basis for this run than no catalog
+            // at all: without one, every item in the manifest is reported as missing
+            // from the catalog and the Mac installs nothing. One dropped connection
+            // on a 4 MB catalog produced forty of those warnings on a lab Mac whose
+            // link was otherwise fine.
+            if FileManager.default.fileExists(atPath: catalogPath) {
+                display.info("Could not reach the Munki server for catalog \(resourceName): connection error \(errorCode): \(description). Using the copy from the last successful run.")
+                return catalogPath
+            }
             // Same treatment as transient item downloads: offline is not an error.
             if FetchError.transientNetworkErrorCodes.contains(errorCode),
                boolPref("SuppressTransientDownloadWarnings") ?? true
