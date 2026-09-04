@@ -689,7 +689,15 @@ func getCatalogs(_ catalogList: [String]) {
             continue
         }
         guard let catalogPath = downloadCatalog(catalogName) else {
-            display.error("Could not download catalog \(catalogName)")
+            // A server we could not reach is not a catalog problem. Raising an
+            // error here turns one dropped connection into a device-level error
+            // plus a warning for every item in the manifest, none of it
+            // actionable and all of it gone by the next run.
+            if lastCatalogFetchWasTransient {
+                display.info("Skipping catalog \(catalogName) this run: the Munki server could not be reached.")
+            } else {
+                display.error("Could not download catalog \(catalogName)")
+            }
             continue
         }
         do {
