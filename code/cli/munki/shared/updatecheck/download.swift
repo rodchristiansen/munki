@@ -350,7 +350,14 @@ private let catalogExtensions = [".yaml", "", ".plist"]
 /// first and falls back to <name> and <name>.plist on HTTP 404. The local
 /// copy is always stored under the bare catalog name.
 /// Returns the path to the downloaded catalog file.
+/// Set by downloadCatalog when the last attempt failed only because the server
+/// could not be reached. The caller uses it to keep a momentary blip out of the
+/// error stream: nothing is wrong with the catalog or the client, and the next
+/// run picks it up.
+var lastCatalogFetchWasTransient = false
+
 func downloadCatalog(_ catalogName: String) -> String? {
+    lastCatalogFetchWasTransient = false
     let catalogPath = managedInstallsDir(subpath: "catalogs/\(catalogName)")
     display.detail("Getting catalog \(catalogName)...")
     let message = "Retrieving catalog \(catalogName)..."
@@ -377,10 +384,21 @@ func downloadCatalog(_ catalogName: String) -> String? {
             display.error("Could not retrieve catalog \(resourceName) from server. HTTP error \(errorCode): \(description)")
             return nil
         } catch let FetchError.connection(errorCode, description) {
+            // The server was unreachable. A catalog we fetched on an earlier run is
+            // still on disk and is a far better basis for this run than no catalog
+            // at all: without one, every item in the manifest is reported as missing
+            // from the catalog and the Mac installs nothing. One dropped connection
+            // on a 4 MB catalog produced forty of those warnings on a lab Mac whose
+            // link was otherwise fine.
+            if FileManager.default.fileExists(atPath: catalogPath) {
+                display.info("Could not reach the Munki server for catalog \(resourceName): connection error \(errorCode): \(description). Using the copy from the last successful run.")
+                return catalogPath
+            }
             // Same treatment as transient item downloads: offline is not an error.
             if FetchError.transientNetworkErrorCodes.contains(errorCode),
                boolPref("SuppressTransientDownloadWarnings") ?? true
             {
+                lastCatalogFetchWasTransient = true
                 display.info("Could not reach the Munki server for catalog \(resourceName): transient network error \(errorCode): \(description). Will retry on the next run.")
             } else {
                 display.error("Could not retrieve catalog \(resourceName) from server: connection error \(errorCode): \(description)")
