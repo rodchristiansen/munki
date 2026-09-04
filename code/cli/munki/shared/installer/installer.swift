@@ -185,6 +185,8 @@ func handleApplePackageInstall(pkginfo: PlistDict, itemPath: String) async -> (I
 /// Attempt to install a single item from the installList
 /// Returns an exitcode for the attempted install and a flag to indicate the need to restart
 func installItem(_ item: PlistDict) async -> (Int, Bool) {
+    // Any detail left by a previous item's script is not this item's story
+    lastScriptFailureDetail = nil
     var needToRestart = false
     let itemName = item["name"] as? String ?? "<unknown>"
     let installerType = item["installer_type"] as? String ?? "pkg_install"
@@ -339,6 +341,9 @@ func installWithInstallInfo(
                                      status: "started", message: "Installing \(displayName)")
         let (retcode, restartNeededForThisItem) = await installItem(item)
         restartFlag = restartFlag || restartNeededForThisItem
+        // A failing preinstall or postinstall script says why in its output; carry
+        // that onto the item so the failure reads as more than an exit code.
+        let failureDetail = retcode == 0 ? nil : lastScriptFailureDetail
 
         // if install was successful and this is a SelfService OnDemand install
         // remove the item from the SelfServeManifest's managed_installs
@@ -361,8 +366,8 @@ func installWithInstallInfo(
         SessionLog.shared.logInstall(
             name: itemName, version: versionToInstall, action: "install",
             status: retcode == 0 ? "completed" : "failed", message: logMessage,
-            error: retcode == 0 ? nil : "return code \(retcode)",
-            statusReason: retcode == 0 ? "Installation completed successfully" : "Installer returned \(retcode)",
+            error: retcode == 0 ? nil : failureDetail.map { "\($0) (return code \(retcode))" } ?? "return code \(retcode)",
+            statusReason: retcode == 0 ? "Installation completed successfully" : failureDetail ?? "Installer returned \(retcode)",
             statusReasonCode: retcode == 0 ? "install_completed" : "check_failed",
             detectionMethod: "none", installedVersion: retcode == 0 ? versionToInstall : nil
         )
