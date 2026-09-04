@@ -74,8 +74,28 @@ class ScriptRunner: AsyncProcessRunner {
     }
 }
 
+/// The most specific line a failing script printed, kept so the caller can put
+/// something better than a bare exit code on the item. Munki logs the whole
+/// stderr block to the run log, but an item that only says "return code 1"
+/// tells an admin nothing about which step failed.
+var lastScriptFailureDetail: String?
+
+/// Reduces a script's output to the one line worth showing on the item: the
+/// last non-empty line, which for a script that logs its progress is the point
+/// it gave up on.
+func scriptFailureDetail(from results: CLIResults) -> String? {
+    let text = results.error.isEmpty ? results.output : results.error
+    let lines = text
+        .components(separatedBy: .newlines)
+        .map { $0.trimmingCharacters(in: .whitespaces) }
+        .filter { !$0.isEmpty && !$0.hasPrefix("---") }
+    guard let last = lines.last, last.count <= 300 else { return lines.last.map { String($0.prefix(300)) } }
+    return last
+}
+
 /// Runs a script, Returns return code.
 func runScript(_ path: String, itemName: String, scriptName: String, suppressError: Bool = false) async -> Int {
+    lastScriptFailureDetail = nil
     if suppressError {
         display.detail("Running \(scriptName) for \(itemName)")
     } else {
@@ -91,6 +111,7 @@ func runScript(_ path: String, itemName: String, scriptName: String, suppressErr
     let result = proc.results
 
     if result.exitcode != 0, !suppressError {
+        lastScriptFailureDetail = scriptFailureDetail(from: result)
         display.error("Running \(scriptName) for \(itemName) failed with exitcode \(result.exitcode)")
         if proc.results.error.isEmpty {
             display.error("<no stderr output>")
