@@ -282,7 +282,8 @@ func findMatchingPkginfo(_ repo: Repo, _ pkginfo: PlistDict) async -> PlistDict?
     if let installerItemHash = pkginfo["installer_item_hash"] as? String,
        let matchingIndexes = catalogDB.hashes[installerItemHash]
     {
-        return catalogDB.items[matchingIndexes[0]]
+        // Return a deep copy to ensure memory independence from catalogDB
+        return independentCopy(of: catalogDB.items[matchingIndexes[0]])
     }
     // do we have an item with matching receipts?
     if let receipts = pkginfo["receipts"] as? [PlistDict] {
@@ -301,7 +302,8 @@ func findMatchingPkginfo(_ repo: Repo, _ pkginfo: PlistDict) async -> PlistDict?
                                 { $0.keys.contains("packageid") }.map
                                 { $0["packageid"] as? String ?? "" }
                             if Set(testPkgIds) == Set(pkgids) {
-                                return testPkgInfo
+                                // Return a deep copy to ensure memory independence from catalogDB
+                                return independentCopy(of: testPkgInfo)
                             }
                         }
                     }
@@ -324,7 +326,8 @@ func findMatchingPkginfo(_ repo: Repo, _ pkginfo: PlistDict) async -> PlistDict?
             versions.sort { $0 > $1 }
             let highestVersion = versions[0].value
             if let indexes = possibleMatches[highestVersion] {
-                return catalogDB.items[indexes[0]]
+                // Return a deep copy to ensure memory independence from catalogDB
+                return independentCopy(of: catalogDB.items[indexes[0]])
             }
         }
     }
@@ -338,7 +341,8 @@ func findMatchingPkginfo(_ repo: Repo, _ pkginfo: PlistDict) async -> PlistDict?
             versions.sort { $0 > $1 }
             let highestVersion = versions[0].value
             if let indexes = possibleMatches[highestVersion] {
-                return catalogDB.items[indexes[0]]
+                // Return a deep copy to ensure memory independence from catalogDB
+                return independentCopy(of: catalogDB.items[indexes[0]])
             }
         }
     }
