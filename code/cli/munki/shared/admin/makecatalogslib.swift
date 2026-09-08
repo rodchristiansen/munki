@@ -231,7 +231,9 @@ struct CatalogsMaker {
             let pkginfoIdentifier = "pkgsinfo/" + pkginfoName
             do {
                 let data = try await repo.get(pkginfoIdentifier)
-                pkginfo = try readPlist(fromData: data) as? PlistDict ?? PlistDict()
+                // pkginfo files may be plist or YAML, with or without an extension
+                let shouldPreferYaml = adminPref("use_yaml") as? Bool ?? false
+                pkginfo = try readData(data, preferYaml: shouldPreferYaml, filepath: pkginfoIdentifier) as? PlistDict ?? PlistDict()
             } catch {
                 errors.append("Unexpected error reading \(pkginfoIdentifier): \(error)")
                 continue

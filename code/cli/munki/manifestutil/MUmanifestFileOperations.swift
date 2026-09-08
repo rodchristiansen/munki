@@ -24,7 +24,8 @@ import Foundation
 func saveManifest(repo: Repo,
                   manifest: PlistDict,
                   name: String,
-                  overwrite: Bool = false) async -> Bool
+                  overwrite: Bool = false,
+                  yamlOutput: Bool = false) async -> Bool
 {
     if !overwrite {
         let existingManifestNames = await getManifestNames(repo: repo) ?? []
@@ -34,7 +35,7 @@ func saveManifest(repo: Repo,
         }
     }
     do {
-        let data = try plistToData(manifest)
+        let data = yamlOutput ? try yamlToData(manifest) : try plistToData(manifest)
         try await repo.put("manifests/\(name)", content: data)
         return true
     } catch {
@@ -69,14 +70,14 @@ func copyOrRenameManifest(repo: Repo, sourceName: String, destinationName: Strin
 }
 
 /// Creates a new, empty manifest
-func newManifest(repo: Repo, name: String) async -> Bool {
+func newManifest(repo: Repo, name: String, yamlOutput: Bool = false) async -> Bool {
     let manifest = [
         "catalogs": [String](),
         "included_manifests": [String](),
         "managed_installs": [String](),
         "managed_uninstalls": [String](),
     ]
-    return await saveManifest(repo: repo, manifest: manifest, name: name)
+    return await saveManifest(repo: repo, manifest: manifest, name: name, yamlOutput: yamlOutput)
 }
 
 /// Deletes a manifest
@@ -107,9 +108,20 @@ extension ManifestUtil {
         ))
         var manifestName: String
 
+        @Flag(help: "Create manifest in YAML format instead of XML plist.")
+        var yaml = false
+
+    /// Determine if YAML output should be used based on flag or global preference
+    private var shouldUseYaml: Bool {
+        if yaml {
+            return true
+        }
+        return adminPref("use_yaml") as? Bool ?? false
+    }
+
         func run() async throws {
             guard let repo = RepoConnection.shared.repo else { return }
-            _ = await newManifest(repo: repo, name: manifestName)
+            _ = await newManifest(repo: repo, name: manifestName, yamlOutput: shouldUseYaml)
         }
     }
 }

@@ -104,7 +104,12 @@ func serialize(_ plist: Any) throws -> Data {
 }
 
 /// Attempt to write a PropertyList object to a file
+/// Writes yaml if filepath has .yaml/.yml extension, otherwise writes plist
 func writePlist(_ dataObject: Any, toFile filepath: String) throws {
+    if isYamlFile(filepath) {
+        try writeYaml(dataObject, toFile: filepath)
+        return
+    }
     do {
         let data = try serialize(dataObject) as NSData
         if !(data.write(toFile: filepath, atomically: true)) {
@@ -121,7 +126,11 @@ func plistToData(_ dataObject: Any) throws -> Data {
 }
 
 /// Attempt to convert a PropertyList object to string
-func plistToString(_ dataObject: Any) throws -> String {
+/// If yamlOutput is true, returns yaml format; otherwise returns plist format
+func plistToString(_ dataObject: Any, yamlOutput: Bool = false) throws -> String {
+    if yamlOutput {
+        return try yamlToString(dataObject)
+    }
     do {
         let data = try serialize(dataObject)
         return String(data: data, encoding: String.Encoding.utf8)!

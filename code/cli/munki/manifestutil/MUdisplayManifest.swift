@@ -23,7 +23,10 @@ import Foundation
 func getManifest(repo: Repo, name: String) async -> PlistDict? {
     do {
         let data = try await repo.get("manifests/\(name)")
-        return try readPlist(fromData: data) as? PlistDict
+        // manifests have no extension, so detect the format from the content
+        let shouldPreferYaml = adminPref("use_yaml") as? Bool ?? false
+        let manifest = try readData(data, preferYaml: shouldPreferYaml, filepath: "manifests/\(name)")
+        return manifest as? PlistDict
     } catch {
         printStderr("Could not retrieve manifest: \(error.localizedDescription)")
         return nil
@@ -99,11 +102,22 @@ extension ManifestUtil {
               help: "Display manifest in XML format.")
         var xml: Bool = false
 
+        @Flag(help: "Display manifest in YAML format.")
+        var yaml: Bool = false
+
         @Argument(help: ArgumentHelp(
             "Prints the contents of the specified manifest",
             valueName: "manifest-name"
         ))
         var manifestName: String
+
+    /// Determine if YAML output should be used based on flag or global preference
+    private var shouldUseYaml: Bool {
+        if yaml {
+            return true
+        }
+        return adminPref("use_yaml") as? Bool ?? false
+    }
 
         func run() async throws {
             guard let repo = RepoConnection.shared.repo else { return }
@@ -113,6 +127,8 @@ extension ManifestUtil {
                 }
                 if xml {
                     print((try? plistToString(manifest)) ?? "")
+                } else if shouldUseYaml {
+                    print((try? yamlToString(manifest)) ?? "")
                 } else {
                     printPlist(manifest)
                 }
@@ -133,11 +149,22 @@ extension ManifestUtil {
               help: "Display manifest in XML format.")
         var xml: Bool = false
 
+        @Flag(help: "Display manifest in YAML format.")
+        var yaml: Bool = false
+
         @Argument(help: ArgumentHelp(
             "Prints the contents of the specified manifest",
             valueName: "manifest-name"
         ))
         var manifestName: String
+
+    /// Determine if YAML output should be used based on flag or global preference
+    private var shouldUseYaml: Bool {
+        if yaml {
+            return true
+        }
+        return adminPref("use_yaml") as? Bool ?? false
+    }
 
         func run() async throws {
             guard let repo = RepoConnection.shared.repo else { return }
@@ -145,6 +172,8 @@ extension ManifestUtil {
                 manifest = await expandIncludedManifests(repo: repo, manifest: manifest)
                 if xml {
                     print((try? plistToString(manifest)) ?? "")
+                } else if shouldUseYaml {
+                    print((try? yamlToString(manifest)) ?? "")
                 } else {
                     printPlist(manifest)
                 }

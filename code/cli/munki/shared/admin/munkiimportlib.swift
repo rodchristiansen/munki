@@ -86,13 +86,17 @@ func copyInstallerItemToRepo(_ repo: Repo, itempath: String, version: String, su
 
 /// Saves pkginfo to <munki_repo>/pkgsinfo/subdirectory
 /// Can throw PlistError.writeError, RepoError, or RepoCopyError
-func copyPkgInfoToRepo(_ repo: Repo, pkginfo: PlistDict, subdirectory: String = "") async throws -> String {
-    let pkginfoData = try plistToData(pkginfo)
+func copyPkgInfoToRepo(_ repo: Repo, pkginfo: PlistDict, subdirectory: String = "", yamlOutput: Bool = false) async throws -> String {
     let destinationPath = ("pkgsinfo" as NSString).appendingPathComponent(subdirectory)
     var pkginfoExt = adminPref("pkginfo_extension") as? String ?? ""
+    if yamlOutput && pkginfoExt.isEmpty {
+        pkginfoExt = ".yaml"
+    }
     if !pkginfoExt.isEmpty, !pkginfoExt.hasPrefix(".") {
         pkginfoExt = "." + pkginfoExt
     }
+    let useYaml = yamlOutput || isYamlFile("file\(pkginfoExt)")
+    let pkginfoData = useYaml ? try yamlToData(pkginfo) : try plistToData(pkginfo)
     var arch = getSingleArch(pkginfo)
     if !arch.isEmpty {
         arch = "-" + arch
@@ -721,7 +725,7 @@ func editPkgInfoInExternalEditor(_ pkginfo: PlistDict) -> PlistDict {
         }
         // read edited pkginfo
         do {
-            if let editedPkginfo = try readPlist(fromFile: filePath) as? PlistDict {
+            if let editedPkginfo = try detectFileContent(fromFile: filePath) as? PlistDict {
                 return editedPkginfo
             } else {
                 throw PlistError.readError(description: "Plist has bad format")
