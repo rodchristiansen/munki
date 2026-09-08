@@ -191,9 +191,9 @@ func getManifest(_ name: String, suppressErrors: Bool = false) throws -> String 
         throw ManifestError.notRetrieved(error.localizedDescription)
     }
 
-    // validate the plist
+    // validate the manifest (plist or YAML)
     do {
-        _ = try readPlist(fromFile: manifestLocalPath)
+        _ = try detectFileContent(fromFile: manifestLocalPath)
     } catch {
         display.error("Manifest returned for \(name) is invalid.")
         try? FileManager.default.removeItem(atPath: manifestLocalPath)
@@ -201,7 +201,7 @@ func getManifest(_ name: String, suppressErrors: Bool = false) throws -> String 
             "Manifest returned for \(name) is invalid: \(error.localizedDescription)")
     }
 
-    // got a valid plist
+    // got a valid manifest
     display.detail("Retrieved manifest \(name)")
     Manifests.shared.set(name, path: manifestLocalPath)
     return manifestLocalPath
@@ -283,7 +283,7 @@ func cleanUpManifests() {
 func manifestData(_ path: String) -> PlistDict? {
     if pathExists(path) {
         do {
-            if let plist = try readPlist(fromFile: path) as? PlistDict {
+            if let plist = try detectFileContent(fromFile: path) as? PlistDict {
                 return plist
             } else {
                 // could not coerce to correct format

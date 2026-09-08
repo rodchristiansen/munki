@@ -53,18 +53,40 @@ func deserialize(_ data: Data?) throws -> Any? {
 }
 
 /// Attempt to read a PropertyList from a file
+/// Files with a .yaml/.yml extension are read as YAML
 func readPlist(fromFile filepath: String) throws -> Any? {
+    if isYamlFile(filepath) {
+        return try readYaml(fromFile: filepath)
+    }
     return try deserialize(NSData(contentsOfFile: filepath) as Data?)
 }
 
 /// Attempt to read a PropertyList from data
+/// Tries plist first, then yaml if that fails
 func readPlist(fromData data: Data) throws -> Any? {
-    return try deserialize(data)
+    do {
+        return try deserialize(data)
+    } catch {
+        do {
+            return try readYaml(fromData: data)
+        } catch {
+            throw PlistError.readError(description: "Failed to parse as plist or yaml: \(error)")
+        }
+    }
 }
 
 /// Attempt to read a PropertyList from a string
+/// Tries plist first, then yaml if that fails
 func readPlist(fromString string: String) throws -> Any? {
-    return try deserialize(string.data(using: String.Encoding.utf8))
+    do {
+        return try deserialize(string.data(using: String.Encoding.utf8))
+    } catch {
+        do {
+            return try readYaml(fromString: string)
+        } catch {
+            throw PlistError.readError(description: "Failed to parse as plist or yaml: \(error)")
+        }
+    }
 }
 
 /// Attempt to convert a PropertyList object into a data representation
