@@ -15,6 +15,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 
+import Foundation
 import Testing
 
 struct yamlFloatResolverTests {
@@ -163,5 +164,219 @@ struct mixedFormatDetectionTests {
         #expect(isLikelyYamlContent("<?xml version=\"1.0\"?>\n<plist>") == false)
         #expect(isLikelyYamlContent("---\nname: TestApp") == true)
         #expect(isLikelyYamlContent("name: TestApp\nversion: '1.0'") == true)
+    }
+}
+
+struct yamlWriterTests {
+    /// Empty-string values must round-trip through YAML write + read.
+    /// `sanitizeForYaml` must not drop string values that are empty, and the
+    /// writer must emit them explicitly quoted (`key: ''`) so they parse back
+    /// as empty strings, not null/missing.
+    @Test func emptyStringValuesRoundTrip() async throws {
+        let input: [String: Any] = [
+            "name": "TestApp",
+            "version": "1.0",
+            "description": "",
+            "blocking_applications": "",
+            "notes": "non-empty",
+            "receipts": [
+                [
+                    "packageid": "com.example.testapp",
+                    "version": "1.0",
+                    "filename": "",
+                ] as [String: Any],
+            ],
+        ]
+
+        let yamlString = try yamlToString(input)
+
+        // The empty-string keys must be present in the written YAML.
+        #expect(yamlString.contains("description:"),
+                "description key was dropped from YAML output: \(yamlString)")
+        #expect(yamlString.contains("blocking_applications:"),
+                "blocking_applications key was dropped from YAML output: \(yamlString)")
+        #expect(yamlString.contains("filename:"),
+                "nested filename empty-string key was dropped: \(yamlString)")
+
+        // And the emitted empty strings must be explicitly quoted so they
+        // parse back as "" rather than null.
+        #expect(yamlString.contains("description: ''") || yamlString.contains("description: \"\""),
+                "description empty string was not quoted: \(yamlString)")
+        #expect(yamlString.contains("blocking_applications: ''") || yamlString.contains("blocking_applications: \"\""),
+                "blocking_applications empty string was not quoted: \(yamlString)")
+
+        let parsed = try #require(
+            readYaml(fromString: yamlString) as? [String: Any],
+            "Could not re-parse YAML output"
+        )
+        #expect(parsed["description"] as? String == "",
+                "description did not round-trip as empty string (got \(String(describing: parsed["description"])))")
+        #expect(parsed["blocking_applications"] as? String == "",
+                "blocking_applications did not round-trip as empty string (got \(String(describing: parsed["blocking_applications"])))")
+        #expect(parsed["name"] as? String == "TestApp")
+        #expect(parsed["notes"] as? String == "non-empty")
+
+        let receipts = try #require(parsed["receipts"] as? [[String: Any]])
+        #expect(receipts.first?["filename"] as? String == "",
+                "nested filename empty string did not round-trip (got \(String(describing: receipts.first?["filename"])))")
+    }
+
+    /// Known script field keys always emit as literal block scalars (`|`),
+    /// even when the content is short or single-line. Key-based detection wins.
+    @Test func scriptFieldShortContentEmitsAsLiteralBlock() async throws {
+        let pkginfo: [String: Any] = [
+            "name": "TestApp",
+            "version": "1.0",
+            "preinstall_script": "echo hi",
+        ]
+        let output = try yamlToString(pkginfo)
+        // A YAML literal block starts with `|` on the key line, followed by an
+        // indented value line. Plain/quoted scalars would put the value on the
+        // same line as the key.
+        #expect(output.contains("preinstall_script: |"),
+                "Expected literal block for preinstall_script, got:\n\(output)")
+        #expect(!output.contains("preinstall_script: echo hi"),
+                "Expected script value on a new line, not inline. Got:\n\(output)")
+    }
+
+    /// All known script field keys round-trip as literal blocks.
+    /// Regression guard against accidental removal of entries from `scriptFieldKeys`.
+    @Test func allKnownScriptFieldsEmitAsLiteralBlock() async throws {
+        for key in scriptFieldKeys {
+            let pkginfo: [String: Any] = [key: "exit 0"]
+            let output = try yamlToString(pkginfo)
+            #expect(output.contains("\(key): |"),
+                    "Expected literal block for \(key), got:\n\(output)")
+        }
+    }
+
+    /// A non-script field (`description`) must NOT emit as a literal block even
+    /// when its content contains a shebang-looking prefix. This is the main
+    /// false-positive the tightened heuristic is designed to prevent.
+    @Test func descriptionWithShebangPrefixIsNotLiteralBlock() async throws {
+        let pkginfo: [String: Any] = [
+            "name": "TestApp",
+            "description": "#!/bin/sh usage note for admins",
+        ]
+        let output = try yamlToString(pkginfo)
+        // Single-line content on a non-script key must never become a literal block.
+        #expect(!output.contains("description: |"),
+                "Single-line description must not emit as literal block. Got:\n\(output)")
+    }
+
+    /// Short multi-line content on an arbitrary (non-script, non-prose) key with
+    /// script-like tokens ("if ", indentation) must NOT trigger literal-block
+    /// emission under the strict heuristic.
+    @Test func shortMultilineNonScriptDoesNotBecomeLiteralBlock() async throws {
+        let pkginfo: [String: Any] = [
+            "name": "TestApp",
+            // Short (< 80 chars) multi-line string with script-like tokens.
+            // No shebang, so the heuristic treats it as folded prose, not a
+            // literal script block.
+            "release_notes": "line one\nif fixed: bug",
+        ]
+        let output = try yamlToString(pkginfo)
+        #expect(!output.contains("release_notes: |"),
+                "Short multi-line non-script value must not emit as literal. Got:\n\(output)")
+    }
+
+    /// A multi-line value with a shebang on an unknown key IS treated as a script
+    /// (literal block). Shebang is the strongest content-based signal we keep.
+    @Test func multilineWithShebangOnUnknownKeyUsesLiteralBlock() async throws {
+        let pkginfo: [String: Any] = [
+            "custom_script_field": "#!/bin/sh\necho hi\nexit 0",
+        ]
+        let output = try yamlToString(pkginfo)
+        #expect(output.contains("custom_script_field: |"),
+                "Multi-line shebang content should emit as literal. Got:\n\(output)")
+    }
+
+    /// Versions must be quoted on the way out, not just tolerated on the way in.
+    /// Munki's own reader strips the float rule, but MunkiAdmin, mwa2, AutoPkg and
+    /// any CI script use a standard resolver, where a plain `10.10` becomes 10.1.
+    @Test func ambiguousScalarsQuotedOnWrite() async throws {
+        let pkginfo: [String: Any] = [
+            "name": "TestApp",
+            "version": "126.0",
+            "minimum_os_version": "10.10",
+        ]
+        let output = try yamlToString(pkginfo)
+        #expect(output.contains("version: '126.0'"),
+                "Float-looking version must be quoted. Got:\n\(output)")
+        #expect(output.contains("minimum_os_version: '10.10'"),
+                "Trailing-zero version must be quoted. Got:\n\(output)")
+    }
+
+    /// Quoting applies only to values that would resolve to a non-string type.
+    /// Genuine Ints and Bools stay native, and scripts stay block scalars.
+    @Test func unambiguousValuesLeftAlone() async throws {
+        let pkginfo: [String: Any] = [
+            "name": "TestApp",
+            "installer_item_size": 1024,
+            "unattended_install": true,
+            "postinstall_script": "#!/bin/bash\nexit 0",
+        ]
+        let output = try yamlToString(pkginfo)
+        #expect(output.contains("name: TestApp"))
+        #expect(output.contains("installer_item_size: 1024"))
+        #expect(output.contains("unattended_install: true"))
+        #expect(output.contains("postinstall_script: |"))
+    }
+
+    /// pkginfo output leads with name, display_name, version and ends with _metadata.
+    @Test func pkginfoKeyOrdering() async throws {
+        let pkginfo: [String: Any] = [
+            "_metadata": ["created_by": "test"],
+            "catalogs": ["testing"],
+            "version": "1.0",
+            "name": "TestApp",
+            "display_name": "Test App",
+        ]
+        let output = try yamlToString(pkginfo)
+        let lines = output.components(separatedBy: "\n")
+        #expect(lines[0] == "name: TestApp")
+        #expect(lines[1] == "display_name: Test App")
+        #expect(lines[2] == "version: '1.0'")
+        #expect(lines.last { !$0.isEmpty }?.hasPrefix("  created_by") == true)
+        let metadataIndex = try #require(lines.firstIndex(of: "_metadata:"))
+        let catalogsIndex = try #require(lines.firstIndex(of: "catalogs:"))
+        #expect(catalogsIndex < metadataIndex)
+    }
+
+    /// A top-level manifest keeps alphabetical key order; only entries inside
+    /// conditional_items lead with `condition`.
+    @Test func manifestConditionalItemOrdering() async throws {
+        let manifest: [String: Any] = [
+            "included_manifests": ["base"],
+            "catalogs": ["production"],
+            "conditional_items": [
+                [
+                    "managed_installs": ["ModernApp"],
+                    "condition": "os_vers_major >= 14",
+                ] as [String: Any],
+            ],
+        ]
+        let output = try yamlToString(manifest)
+        let lines = output.components(separatedBy: "\n")
+        #expect(lines[0] == "catalogs:")
+        let conditionLine = try #require(lines.first { $0.contains("condition:") })
+        let installsLine = try #require(lines.first { $0.contains("managed_installs:") })
+        #expect(lines.firstIndex(of: conditionLine)! < lines.firstIndex(of: installsLine)!)
+    }
+
+    /// Foundation types coming out of the plist reader serialize to plain YAML types.
+    @Test func foundationValuesSerialize() async throws {
+        let input: [String: Any] = [
+            "name": "TestApp",
+            "installed_size": NSNumber(value: 4096),
+            "unattended_install": NSNumber(value: true),
+            "installer_item_hash": NSString(string: "abc123"),
+            "blocking_applications": NSNull(),
+        ]
+        let output = try yamlToString(input)
+        #expect(output.contains("installed_size: 4096"))
+        #expect(output.contains("unattended_install: true"))
+        #expect(output.contains("installer_item_hash: abc123"))
+        #expect(!output.contains("blocking_applications"))
     }
 }

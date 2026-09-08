@@ -331,3 +331,536 @@ func detectFileContent(fromFile filepath: String, preferYaml: Bool = false) thro
     let data = content.data(using: .utf8) ?? Data()
     return try readData(data, preferYaml: shouldTryYamlFirst, filepath: filepath)
 }
+
+// MARK: - Writing
+
+// MARK: Key ordering for pkginfo and manifest output
+
+/// Keys that should appear first in pkginfo YAML output, in this order
+private let priorityKeys = ["name", "display_name", "version"]
+
+/// Keys that should appear last in pkginfo YAML output
+private let lastKeys = ["_metadata"]
+
+/// Preferred key order for receipt entries - packageid first for readability
+private let receiptKeyOrder = ["packageid", "name", "filename", "installed_size", "version", "optional"]
+
+/// Preferred key order for installs items - path first for readability
+private let installsKeyOrder = ["path", "type", "CFBundleIdentifier", "CFBundleName", "CFBundleShortVersionString", "CFBundleVersion", "md5checksum", "minosversion"]
+
+/// Keys that indicate a conditional_items entry dictionary
+private let conditionalItemKeys: Set<String> = ["condition", "managed_installs", "managed_uninstalls", "managed_updates", "optional_installs", "included_manifests", "conditional_items"]
+
+/// Preferred key order for conditional_items - condition MUST be first for readability
+private let conditionalItemKeyOrder = ["condition", "managed_installs", "managed_uninstalls", "managed_updates", "optional_installs", "default_installs", "featured_items", "included_manifests", "conditional_items"]
+
+/// Check if a dictionary looks like a receipt entry
+private func isReceiptDict(_ dict: [String: Any]) -> Bool {
+    // A receipt must have packageid and typically has version
+    return dict.keys.contains("packageid")
+}
+
+/// Check if a dictionary looks like an installs item
+private func isInstallsDict(_ dict: [String: Any]) -> Bool {
+    // An installs item must have path and type
+    return dict.keys.contains("path") && dict.keys.contains("type")
+}
+
+/// Check if a dictionary looks like a conditional_items entry (manifest conditional block)
+private func isConditionalItemDict(_ dict: [String: Any]) -> Bool {
+    // Top-level manifests share most keys with conditional blocks (managed_installs,
+    // included_manifests, etc.). `catalogs` is the disambiguator: conditional blocks
+    // never carry it. Without this check a top-level manifest with `included_manifests`
+    // routes through sortConditionalItemKeys and the keys emit in the conditional
+    // layout instead of the manifest's alphabetical layout.
+    if dict.keys.contains("catalogs") {
+        return false
+    }
+    // A conditional item typically has "condition" key, or has manifest list keys without name/version
+    // Check for condition key first (most reliable indicator)
+    if dict.keys.contains("condition") {
+        return true
+    }
+    // Also detect conditional items without explicit condition (unconditional blocks in conditional_items array)
+    // These have manifest keys but no pkginfo keys like name, version, display_name
+    let hasManifestKeys = dict.keys.contains { conditionalItemKeys.contains($0) }
+    let hasPkginfoKeys = dict.keys.contains("name") || dict.keys.contains("version") || dict.keys.contains("installer_item_location")
+    return hasManifestKeys && !hasPkginfoKeys
+}
+
+/// Order keys by their position in `preferredOrder`, then the rest alphabetically
+private func sortKeys(_ keys: [String], preferredOrder: [String]) -> [String] {
+    var orderedKeys: [String] = []
+    var otherKeys: [String] = []
+
+    for key in keys {
+        if preferredOrder.contains(key) {
+            orderedKeys.append(key)
+        } else {
+            otherKeys.append(key)
+        }
+    }
+
+    orderedKeys.sort {
+        (preferredOrder.firstIndex(of: $0) ?? 999) < (preferredOrder.firstIndex(of: $1) ?? 999)
+    }
+    otherKeys.sort()
+
+    return orderedKeys + otherKeys
+}
+
+/// Sort pkginfo dictionary keys with custom ordering:
+/// - name, display_name, version appear first (in that order)
+/// - _metadata appears last
+/// - All other keys appear alphabetically in between
+func sortPkginfoKeys(_ keys: [String]) -> [String] {
+    var firstKeys: [String] = []
+    var middleKeys: [String] = []
+    var endKeys: [String] = []
+
+    for key in keys {
+        if priorityKeys.contains(key) {
+            firstKeys.append(key)
+        } else if lastKeys.contains(key) {
+            endKeys.append(key)
+        } else {
+            middleKeys.append(key)
+        }
+    }
+
+    // Sort first keys by their position in priorityKeys array
+    firstKeys.sort { priorityKeys.firstIndex(of: $0)! < priorityKeys.firstIndex(of: $1)! }
+
+    // Sort middle keys alphabetically
+    middleKeys.sort()
+
+    // Sort end keys alphabetically (in case we add more lastKeys in the future)
+    endKeys.sort()
+
+    return firstKeys + middleKeys + endKeys
+}
+
+/// Sort dictionary keys based on the dictionary's apparent type
+private func sortKeysForDict(_ dict: [String: Any]) -> [String] {
+    if isReceiptDict(dict) {
+        return sortKeys(Array(dict.keys), preferredOrder: receiptKeyOrder)
+    } else if isInstallsDict(dict) {
+        return sortKeys(Array(dict.keys), preferredOrder: installsKeyOrder)
+    } else if isConditionalItemDict(dict) {
+        return sortKeys(Array(dict.keys), preferredOrder: conditionalItemKeyOrder)
+    } else {
+        return sortPkginfoKeys(Array(dict.keys))
+    }
+}
+
+// MARK: Block scalar handling for multi-line strings
+
+/// Script field keys that should use YAML literal block scalar style (|)
+/// These fields contain executable scripts and must preserve exact newlines and formatting.
+///
+/// This is the canonical list of Munki pkginfo keys whose values are interpreted
+/// as shell/Python scripts. Keep in sync with `ScriptOptions` in pkginfoOptions.swift
+/// and the script handling in pkginfolib.swift / installer.swift.
+///
+/// `internal` (package-private) so tests can reference it; see yamlutilsTests.swift.
+let scriptFieldKeys: Set<String> = [
+    "preinstall_script",
+    "postinstall_script",
+    "installcheck_script",
+    "uninstallcheck_script",
+    "postuninstall_script",
+    "uninstall_script",
+    "preuninstall_script",
+    "version_script",
+    "embedded_script",
+]
+
+/// Prose field keys that should use YAML folded block scalar style (>)
+/// These fields contain human-readable text where line wrapping is acceptable
+private let proseFieldKeys: Set<String> = [
+    "description",
+    "notes",
+]
+
+/// Minimum length for an unknown-key multi-line string to be treated as a script.
+/// Below this, we prefer folded style (readable prose) over literal (preserves whitespace).
+/// 80 chars is roughly one terminal line — shorter content is almost certainly not a script.
+private let scriptContentMinLength = 80
+
+/// Determine the appropriate YAML scalar style for a string value based on its key and content.
+///
+/// Policy (in order):
+///   1. Known script field key → literal block (`|`). Wins regardless of content length or
+///      whether the value has newlines — a single-line `preinstall_script: echo hi` still
+///      emits as a block for consistency with Munki conventions.
+///   2. Single-line string → default (plain/quoted) style. Single-line values are never
+///      scripts, regardless of whether they contain `#!`, `if `, etc.
+///   3. Multi-line prose field key → folded block (`>`).
+///   4. Multi-line value on an unknown key → literal only if it looks like a script by
+///      a STRICT heuristic: contains a shebang OR is at least `scriptContentMinLength`
+///      characters long. Otherwise folded (readable prose).
+///
+/// - Parameters:
+///   - key: The dictionary key name
+///   - value: The string value
+/// - Returns: The appropriate Node.Scalar.Style for this string
+func scalarStyleForString(key: String, value: String) -> Node.Scalar.Style {
+    // 1. Known script field — always literal, regardless of content.
+    if scriptFieldKeys.contains(key) {
+        return .literal
+    }
+
+    // 2. Single-line strings are never scripts. Let Yams choose the scalar style.
+    if !value.contains("\n") {
+        return .any
+    }
+
+    // 3. Known prose field — folded.
+    if proseFieldKeys.contains(key) {
+        return .folded
+    }
+
+    // 4. Unknown key with a multi-line value — strict content check.
+    //    Only promote to literal if we have strong evidence it's a script.
+    let hasShebang = value.hasPrefix("#!")
+    let isLong = value.count >= scriptContentMinLength
+    if hasShebang || isLong {
+        return .literal
+    }
+
+    // Short multi-line content on an unknown key → folded (readable prose wrapping).
+    return .folded
+}
+
+// MARK: Node construction
+
+/// Would this string be read back as something other than a string?
+///
+/// The read path uses `munkiYamlResolver`, which has the float rule removed, so
+/// Munki's own tools recover `10.10` from a plain scalar. Nothing else does:
+/// PyYAML, ruamel and libyaml all apply the standard resolver, so a plain
+/// `minimum_os_version: 10.10` written by Munki reads back as the float 10.1 in
+/// MunkiAdmin, mwa2, AutoPkg or any CI script. The same applies to `version: 1.0`,
+/// a `yes`/`no`/`on`/`off` string, `null`, and integer-looking values.
+///
+/// Resolving against `Resolver.default` — deliberately not `munkiYamlResolver` —
+/// asks the question every other parser will ask, and anything that does not come
+/// back as `.str` gets quoted on the way out.
+private func isAmbiguousYamlString(_ string: String) -> Bool {
+    return Resolver.default.resolveTag(of: Node(string)) != .str
+}
+
+/// Sentinel used by sanitizeForYaml for values that must be dropped from output
+private let yamlNullSentinel = "__YAML_NULL_SENTINEL__"
+
+/// Convert a value to a Yams Node, recursively handling dictionaries with custom key ordering
+/// - Parameters:
+///   - value: The value to convert
+///   - key: Optional key name for context-aware string styling (block scalars for scripts)
+private func toNode(_ value: Any, forKey key: String? = nil) -> Node {
+    switch value {
+    case is NSNull:
+        // Return an empty/null node - this shouldn't normally happen if we filter properly
+        return Node("")
+    case let string as String:
+        // Check for null sentinel first
+        if string == yamlNullSentinel {
+            return Node("")
+        }
+        // Preserve empty strings explicitly as '' in YAML output.
+        //
+        // Round-trip fidelity: a pkginfo key whose value is "" (e.g. an
+        // explicit empty `description:` or `blocking_applications: ""`)
+        // must survive write+read. An unquoted empty scalar in YAML
+        // resolves to null under Yams' core resolver, which would cause
+        // the key to either read back as nil or collide with Munki's
+        // NSNull-filtering pass and silently disappear. Emitting with
+        // an explicit `.str` tag and `.singleQuoted` style guarantees
+        // the value is always parsed back as an empty String.
+        if string.isEmpty {
+            return Node("", Tag(.str), .singleQuoted)
+        }
+        // Use appropriate block scalar style based on key and content
+        let style = key.map { scalarStyleForString(key: $0, value: string) } ?? .any
+        // A block scalar (script or prose) always reads back as a string, so the
+        // ambiguity check only applies to scalars Yams would emit plain.
+        if style == .any, isAmbiguousYamlString(string) {
+            return Node(string, Tag(.str), .singleQuoted)
+        }
+        return Node(string, .implicit, style)
+    case let dict as [String: Any]:
+        // Sort keys using context-aware ordering (receipts, installs, or pkginfo)
+        let sortedKeys = sortKeysForDict(dict)
+        var pairs: [(Node, Node)] = []
+        for dictKey in sortedKeys {
+            if let val = dict[dictKey] {
+                // Skip NSNull values and null sentinels - don't include them in YAML output
+                if val is NSNull {
+                    continue
+                }
+                if let str = val as? String, str == yamlNullSentinel {
+                    continue
+                }
+                // Pass the key name for context-aware string styling
+                pairs.append((Node(dictKey), toNode(val, forKey: dictKey)))
+            }
+        }
+        return Node(pairs, .implicit, .block)
+    case let array as [Any]:
+        // Filter out null sentinels
+        let filtered = array.filter { item in
+            if item is NSNull { return false }
+            if let str = item as? String, str == yamlNullSentinel { return false }
+            return true
+        }
+        let nodes = filtered.map { toNode($0) }
+        return Node(nodes, .implicit, .block)
+    case let int as Int:
+        return Node(String(int), .implicit, .any)
+    case let double as Double:
+        return Node(String(double), .implicit, .any)
+    case let bool as Bool:
+        return Node(bool ? "true" : "false", .implicit, .any)
+    case let date as Date:
+        let formatter = ISO8601DateFormatter()
+        return Node(formatter.string(from: date))
+    case let data as Data:
+        return Node(data.base64EncodedString())
+    default:
+        let desc = String(describing: value)
+        // Last check for null-like values
+        if desc == "<null>" || desc == "nil" || desc == "null" {
+            return Node("")
+        }
+        return Node(desc)
+    }
+}
+
+// MARK: Sanitizing Foundation objects before serialization
+
+/// Check if a value represents null (NSNull or nil-equivalent)
+private func isNullValue(_ value: Any) -> Bool {
+    if value is NSNull {
+        return true
+    }
+    // Check for other null representations
+    let mirror = Mirror(reflecting: value)
+    if mirror.displayStyle == .optional && mirror.children.isEmpty {
+        return true
+    }
+    // Check string representation as last resort
+    let desc = String(describing: value)
+    if desc == "<null>" || desc == "nil" {
+        return true
+    }
+    return false
+}
+
+/// Clean floating-point numbers that are very close to simpler decimal representations
+/// This prevents values like 26.2 from being serialized as 26.199999999999999
+private func cleanFloatingPoint(_ value: Double) -> Any {
+    // If it's actually an integer, return as Int
+    if value == Double(Int(value)) {
+        return Int(value)
+    }
+
+    // Try rounding to 1-4 decimal places and see if we're very close
+    for decimals in 1 ... 4 {
+        let multiplier = pow(10.0, Double(decimals))
+        let rounded = round(value * multiplier) / multiplier
+        let epsilon = pow(10.0, Double(-(decimals + 6))) // Very small tolerance
+
+        if abs(value - rounded) < epsilon {
+            return rounded
+        }
+    }
+
+    // If no clean representation found, return the original value
+    return value
+}
+
+/// Sanitize data object for YAML serialization by converting NSNumber, NSString, etc. to native Swift types
+func sanitizeForYaml(_ object: Any) -> Any {
+    // First check for null values using our comprehensive check
+    if isNullValue(object) {
+        // Return a sentinel that we filter out - but this should rarely happen
+        // as we filter nulls at the dictionary/array level
+        return yamlNullSentinel
+    }
+
+    switch object {
+    case is NSNull:
+        // NSNull represents a null value - return sentinel to filter out
+        return yamlNullSentinel
+    case let nsNumber as NSNumber:
+        // Handle boolean values first
+        if nsNumber === kCFBooleanTrue {
+            return true
+        }
+        if nsNumber === kCFBooleanFalse {
+            return false
+        }
+
+        // Get the underlying CFNumber type to determine how to convert
+        let objCType = String(cString: nsNumber.objCType)
+
+        // Handle different numeric types
+        switch objCType {
+        case "c", "C": // char/unsigned char (often used for booleans)
+            return nsNumber.intValue != 0
+        case "s", "S": // short/unsigned short
+            return nsNumber.intValue
+        case "i", "I": // int/unsigned int
+            return nsNumber.intValue
+        case "l", "L": // long/unsigned long
+            return nsNumber.intValue
+        case "q", "Q": // long long/unsigned long long
+            return nsNumber.intValue
+        case "f": // float
+            return cleanFloatingPoint(Double(nsNumber.floatValue))
+        case "d": // double
+            return cleanFloatingPoint(nsNumber.doubleValue)
+        default:
+            // Fallback: try to determine if it's an integer or floating point
+            if nsNumber.doubleValue == Double(nsNumber.intValue) {
+                return nsNumber.intValue
+            } else {
+                return cleanFloatingPoint(nsNumber.doubleValue)
+            }
+        }
+    case let nsString as NSString:
+        return nsString as String
+    case let nsArray as NSArray:
+        // Filter out NSNull values and sentinels from arrays
+        return nsArray.compactMap { item -> Any? in
+            if isNullValue(item) { return nil }
+            let sanitized = sanitizeForYaml(item)
+            if let str = sanitized as? String, str == yamlNullSentinel { return nil }
+            return sanitized
+        }
+    case let nsDictionary as NSDictionary:
+        var result: [String: Any] = [:]
+        for (key, value) in nsDictionary {
+            // Skip NSNull values and null-like values - don't include them in output
+            if isNullValue(value) { continue }
+            let sanitizedValue = sanitizeForYaml(value)
+            // Also skip if sanitization returned the null sentinel
+            if let str = sanitizedValue as? String, str == yamlNullSentinel { continue }
+            if let stringKey = key as? String {
+                result[stringKey] = sanitizedValue
+            } else if let stringKey = sanitizeForYaml(key) as? String {
+                result[stringKey] = sanitizedValue
+            }
+        }
+        return result
+    case let nsDate as NSDate:
+        // Convert NSDate to ISO 8601 string
+        let formatter = ISO8601DateFormatter()
+        return formatter.string(from: nsDate as Date)
+    case let date as Date:
+        // Convert Date to ISO 8601 string
+        let formatter = ISO8601DateFormatter()
+        return formatter.string(from: date)
+    case let nsData as NSData:
+        // Convert NSData to base64 string
+        return nsData.base64EncodedString()
+    case let data as Data:
+        // Convert Data to base64 string
+        return data.base64EncodedString()
+    case let array as [Any]:
+        // Filter out NSNull values and sentinels from arrays
+        return array.compactMap { item -> Any? in
+            if isNullValue(item) { return nil }
+            let sanitized = sanitizeForYaml(item)
+            if let str = sanitized as? String, str == yamlNullSentinel { return nil }
+            return sanitized
+        }
+    case let dictionary as [String: Any]:
+        var result: [String: Any] = [:]
+        for (key, value) in dictionary {
+            // Skip NSNull values and null-like values
+            if isNullValue(value) { continue }
+            let sanitizedValue = sanitizeForYaml(value)
+            if let str = sanitizedValue as? String, str == yamlNullSentinel { continue }
+            result[key] = sanitizedValue
+        }
+        return result
+    case let dictionary as [AnyHashable: Any]:
+        var result: [String: Any] = [:]
+        for (key, value) in dictionary {
+            // Skip NSNull values and null-like values
+            if isNullValue(value) { continue }
+            let sanitizedValue = sanitizeForYaml(value)
+            if let str = sanitizedValue as? String, str == yamlNullSentinel { continue }
+            if let stringKey = key as? String {
+                result[stringKey] = sanitizedValue
+            } else {
+                result["\(key)"] = sanitizedValue
+            }
+        }
+        return result
+    case is String, is Int, is Double, is Float, is Bool:
+        // Basic Swift types that YAML can handle natively
+        return object
+    default:
+        // Handle any unrecognized object by converting to string representation
+        // This catches Core Foundation types, custom objects, etc.
+        let objectType = type(of: object)
+        let objectString = String(describing: object)
+
+        // Check for null-like values one more time (in case our isNullValue check missed something)
+        if objectString == "<null>" || objectString == "nil" || objectString == "null" {
+            return yamlNullSentinel
+        }
+
+        // Only log warning for truly unexpected types (not null-related)
+        let typeString = String(describing: objectType)
+        if !typeString.contains("Null") && !typeString.contains("null") {
+            print("WARNING: Converting unrecognized object type \(objectType) to string: \(objectString)")
+        }
+
+        if let url = object as? URL {
+            return url.absoluteString
+        }
+        return objectString
+    }
+}
+
+// MARK: Serialization entry points
+
+/// Attempt to convert a data object to YAML string with custom key ordering for pkginfo
+func yamlToString(_ dataObject: Any) throws -> String {
+    do {
+        let sanitizedData = sanitizeForYaml(dataObject)
+        let node = toNode(sanitizedData)
+        return try Yams.serialize(node: node,
+                                  indent: 2,
+                                  width: -1,
+                                  allowUnicode: true)
+    } catch {
+        throw YamlError.writeError(description: "Failed to convert to YAML string: \(error)")
+    }
+}
+
+/// Attempt to convert YAML string to Data
+func yamlToData(_ dataObject: Any) throws -> Data {
+    do {
+        let yamlString = try yamlToString(dataObject)
+        guard let data = yamlString.data(using: .utf8) else {
+            throw YamlError.writeError(description: "Failed to convert YAML string to data")
+        }
+        return data
+    } catch {
+        throw YamlError.writeError(description: "Failed to convert to YAML data: \(error)")
+    }
+}
+
+/// Attempt to write YAML to a file with custom key ordering for pkginfo
+func writeYaml(_ dataObject: Any, toFile filepath: String) throws {
+    do {
+        let yamlString = try yamlToString(dataObject)
+        try yamlString.write(toFile: filepath, atomically: true, encoding: String.Encoding.utf8)
+    } catch {
+        throw YamlError.writeError(description: "Failed to write YAML to \(filepath): \(error)")
+    }
+}
