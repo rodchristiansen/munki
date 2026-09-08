@@ -130,6 +130,7 @@
 		C030A98F2C39C135007F0B34 /* munkihash.swift in Sources */ = {isa = PBXBuildFile; fileRef = C030A98E2C39C135007F0B34 /* munkihash.swift */; };
 		C030A9902C39C135007F0B34 /* munkihash.swift in Sources */ = {isa = PBXBuildFile; fileRef = C030A98E2C39C135007F0B34 /* munkihash.swift */; };
 		C030A9982C3A2E18007F0B34 /* makepkginfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = C030A9972C3A2E18007F0B34 /* makepkginfo.swift */; };
+		C030A99C2C3A2E18007F0B34 /* MPIconvert.swift in Sources */ = {isa = PBXBuildFile; fileRef = C030A99D2C3A2E18007F0B34 /* MPIconvert.swift */; };
 		C030A9A12C3B4F5B007F0B34 /* pkginfoOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C030A99E2C3B4F04007F0B34 /* pkginfoOptions.swift */; };
 		C030A9A22C3B4F63007F0B34 /* pkginfolib.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07074E12C3489FA00B86310 /* pkginfolib.swift */; };
 		C030A9A42C3B4FC9007F0B34 /* pkgutils.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07074E72C34932400B86310 /* pkgutils.swift */; };
@@ -429,6 +430,7 @@
 		C09616C92DEE6E1300281B6B /* tempfileutils.swift in Sources */ = {isa = PBXBuildFile; fileRef = C058EF282DCD11E1002775E0 /* tempfileutils.swift */; };
 		C0AD96022F3E58C50029A293 /* manifestutil.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0AD95F82F3E58C50029A293 /* manifestutil.swift */; };
 		C0AD96032F3E58C50029A293 /* MUcatalogs.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0AD95F92F3E58C50029A293 /* MUcatalogs.swift */; };
+		DC9A11002F0000010000A001 /* MUconvert.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC9A11012F0000010000A001 /* MUconvert.swift */; };
 		C0AD96042F3E58C50029A293 /* MUdisplayManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0AD95FA2F3E58C50029A293 /* MUdisplayManifest.swift */; };
 		C0AD96052F3E58C50029A293 /* MUfind.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0AD95FB2F3E58C50029A293 /* MUfind.swift */; };
 		C0AD96062F3E58C50029A293 /* MUlistManifests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0AD95FC2F3E58C50029A293 /* MUlistManifests.swift */; };
@@ -814,6 +816,7 @@
 		C030A98E2C39C135007F0B34 /* munkihash.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = munkihash.swift; sourceTree = "<group>"; };
 		C030A9952C3A2E18007F0B34 /* makepkginfo */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = makepkginfo; sourceTree = BUILT_PRODUCTS_DIR; };
 		C030A9972C3A2E18007F0B34 /* makepkginfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = makepkginfo.swift; sourceTree = "<group>"; };
+		C030A99D2C3A2E18007F0B34 /* MPIconvert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MPIconvert.swift; sourceTree = "<group>"; };
 		C030A99E2C3B4F04007F0B34 /* pkginfoOptions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = pkginfoOptions.swift; sourceTree = "<group>"; };
 		C030A9B12C3DB88E007F0B34 /* osinstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = osinstaller.swift; sourceTree = "<group>"; };
 		C030A9B52C3DF6D0007F0B34 /* fileutils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = fileutils.swift; sourceTree = "<group>"; };
@@ -883,6 +886,7 @@
 		C0AD95F72F3E58C50029A293 /* manifestutil.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = manifestutil.entitlements; sourceTree = "<group>"; };
 		C0AD95F82F3E58C50029A293 /* manifestutil.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = manifestutil.swift; sourceTree = "<group>"; };
 		C0AD95F92F3E58C50029A293 /* MUcatalogs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MUcatalogs.swift; sourceTree = "<group>"; };
+		DC9A11012F0000010000A001 /* MUconvert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MUconvert.swift; sourceTree = "<group>"; };
 		C0AD95FA2F3E58C50029A293 /* MUdisplayManifest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MUdisplayManifest.swift; sourceTree = "<group>"; };
 		C0AD95FB2F3E58C50029A293 /* MUfind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MUfind.swift; sourceTree = "<group>"; };
 		C0AD95FC2F3E58C50029A293 /* MUlistManifests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MUlistManifests.swift; sourceTree = "<group>"; };
@@ -1179,6 +1183,7 @@
 			isa = PBXGroup;
 			children = (
 				C030A9972C3A2E18007F0B34 /* makepkginfo.swift */,
+				C030A99D2C3A2E18007F0B34 /* MPIconvert.swift */,
 			);
 			path = makepkginfo;
 			sourceTree = "<group>";
@@ -1421,6 +1426,7 @@
 				C0AD95F72F3E58C50029A293 /* manifestutil.entitlements */,
 				C0AD95F82F3E58C50029A293 /* manifestutil.swift */,
 				C0AD95F92F3E58C50029A293 /* MUcatalogs.swift */,
+				DC9A11012F0000010000A001 /* MUconvert.swift */,
 				C0AD95FA2F3E58C50029A293 /* MUdisplayManifest.swift */,
 				C0AD95FB2F3E58C50029A293 /* MUfind.swift */,
 				C0AD95FC2F3E58C50029A293 /* MUlistManifests.swift */,
@@ -2117,6 +2123,7 @@
 				C030A9B82C3DF7DA007F0B34 /* fileutils.swift in Sources */,
 				C0684E432DC580850091E774 /* dmgutils.swift in Sources */,
 				C030A9982C3A2E18007F0B34 /* makepkginfo.swift in Sources */,
+				C030A99C2C3A2E18007F0B34 /* MPIconvert.swift in Sources */,
 				C0D00FA62C45804A0021DA9C /* admincommon.swift in Sources */,
 				C0684E452DC585FC0091E774 /* info.swift in Sources */,
 				C0684E4A2DC586660091E774 /* osinstallerinfo.swift in Sources */,
@@ -2200,6 +2207,7 @@
 				C05DB2222DAC98970081FACD /* fileutils.swift in Sources */,
 				C0AD96022F3E58C50029A293 /* manifestutil.swift in Sources */,
 				C0AD96032F3E58C50029A293 /* MUcatalogs.swift in Sources */,
+				DC9A11002F0000010000A001 /* MUconvert.swift in Sources */,
 				C0AD96042F3E58C50029A293 /* MUdisplayManifest.swift in Sources */,
 				C0AD96052F3E58C50029A293 /* MUfind.swift in Sources */,
 				C0AD96062F3E58C50029A293 /* MUlistManifests.swift in Sources */,

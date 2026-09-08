@@ -24,7 +24,30 @@ import Foundation
 struct MakePkgInfo: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "makepkginfo",
-        abstract: "Creates a pkginfo file (or fragment thereof) from given input."
+        abstract: "Creates a pkginfo file (or fragment thereof) from given input.",
+        usage: """
+              makepkginfo [<options>] <installer-item>
+              makepkginfo convert [--to-yaml|--to-plist] <source> [<destination>]
+              """,
+        discussion: """
+              By default, makepkginfo creates a pkginfo file from a package or disk image.
+              Use 'makepkginfo convert' to convert existing pkginfo files between formats.
+
+              For a full list of options, run: makepkginfo create --help
+              """,
+        subcommands: [
+            Create.self,
+            Convert.self,
+        ],
+        defaultSubcommand: Create.self
+    )
+}
+
+/// The default subcommand for creating pkginfo from installer items
+struct Create: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "create",
+        abstract: "Create a pkginfo file from an installer item (default command)."
     )
 
     @OptionGroup(title: "Pkginfo Override Options")
