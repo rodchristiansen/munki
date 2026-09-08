@@ -691,7 +691,7 @@ func getCatalogs(_ catalogList: [String]) {
             continue
         }
         do {
-            if let catalogData = try readPlist(fromFile: catalogPath) as? [PlistDict] {
+            if let catalogData = try detectFileContent(fromFile: catalogPath) as? [PlistDict] {
                 Catalogs.shared.set(
                     catalogName,
                     to: makeCatalogDB(catalogData)

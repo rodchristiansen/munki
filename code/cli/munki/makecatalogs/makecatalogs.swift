@@ -41,6 +41,17 @@ struct MakeCatalogs: AsyncParsableCommand {
     @Flag(name: .customLong("check-hashes"),
           help: "Check installer item hashes against the actual hashes of installers specified in installer item locations.")
     var checkHashes = false
+
+    @Flag(help: "Write catalogs in YAML format instead of XML plist.")
+    var yaml = false
+
+    /// Determine if YAML output should be used based on flag or global preference
+    private var shouldUseYaml: Bool {
+        if yaml {
+            return true
+        }
+        return adminPref("use_yaml") as? Bool ?? false
+    }
     
     @Option(name: [.customLong("repo-url"), .customLong("repo_url")],
             help: "Optional repo URL that takes precedence over the default repo_url specified via preferences.")
@@ -91,7 +102,8 @@ struct MakeCatalogs: AsyncParsableCommand {
             skipPkgCheck: skipPkgCheck,
             force: force,
             verbose: true,
-            checkHashes: checkHashes
+            checkHashes: checkHashes,
+            yamlOutput: shouldUseYaml
         )
 
         do {
